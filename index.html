@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>School Manager</title>
+<meta name="description" content="Manage students, groups, teachers, attendance and payments — license-gated per school.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3f5d4e">
+<meta name="background-color" content="#f6f4ee">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="School Mgr">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  :root{
+    --ink:#161a2b; --paper:#f4f5fb; --line:#e6e8f2;
+    --moss:#4f46e5; --moss-dark:#3730a3; --moss-light:#eef0fe;
+    --clay:#e0742a; --clay-light:#fdeee1;
+    --good:#12946a; --good-light:#e3f7ee;
+    --card:#ffffff; --muted:#6b7086; --shadow:0 1px 2px rgba(23,24,54,.04), 0 8px 24px -12px rgba(23,24,54,.12);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',-apple-system,'Segoe UI',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;}
+  html[dir="rtl"] body{font-family:'Inter','Tahoma','Segoe UI',sans-serif;}
+  .brand{display:flex;align-items:center;gap:.7rem;padding:1.1rem 1.6rem;border-bottom:1px solid var(--line);flex-wrap:wrap;background:#fff;position:sticky;top:0;z-index:10;box-shadow:0 1px 0 rgba(23,24,54,.03);}
+  .brand .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--moss),#7c3aed);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;letter-spacing:.02em;box-shadow:0 4px 10px -4px rgba(79,70,229,.6);}
+  .brand h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:-.01em;}
+  .brand .role-badge{font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;background:var(--moss-light);color:var(--moss-dark);padding:.3rem .65rem;border-radius:20px;}
+  .lang-switch{margin-inline-start:auto;display:flex;gap:.25rem;background:var(--paper);padding:.2rem;border-radius:10px;}
+  .lang-btn{font-size:.72rem;font-weight:600;border:none;background:transparent;color:var(--muted);padding:.35rem .6rem;border-radius:7px;cursor:pointer;transition:all .15s ease;}
+  .lang-btn.active{background:#fff;color:var(--moss-dark);box-shadow:var(--shadow);}
+  .wrap{max-width:780px;margin:0 auto;padding:1.5rem 1.4rem 3rem;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:1.25rem 1.35rem;margin-bottom:1.1rem;box-shadow:var(--shadow);}
+  label{display:block;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:.8rem 0 .35rem;}
+  input, select{width:100%;padding:.65rem .8rem;border:1.5px solid var(--line);border-radius:10px;font-family:inherit;font-size:.95rem;background:#fbfbfe;color:var(--ink);transition:border-color .15s ease;}
+  input:focus, select:focus{outline:none;border-color:var(--moss);background:#fff;}
+  .btn-primary{background:linear-gradient(135deg,var(--moss),#6d28d9);color:#fff;border:none;padding:.68rem 1.25rem;border-radius:10px;font-weight:600;cursor:pointer;font-size:.9rem;box-shadow:0 4px 12px -4px rgba(79,70,229,.5);transition:transform .12s ease, box-shadow .12s ease;}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 16px -4px rgba(79,70,229,.6);}
+  .btn-secondary{background:#fff;color:var(--moss-dark);border:1.5px solid var(--line);padding:.62rem 1.1rem;border-radius:10px;font-weight:600;cursor:pointer;font-size:.9rem;transition:all .12s ease;}
+  .btn-secondary:hover{border-color:var(--moss);background:var(--moss-light);}
+  .btn-text{background:none;border:none;color:var(--moss-dark);font-size:.85rem;cursor:pointer;font-weight:600;padding:0;}
+  .btn-danger{background:#fff;border:1.5px solid var(--clay);color:var(--clay);padding:.4rem .8rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .12s ease;}
+  .btn-danger:hover{background:var(--clay-light);}
+  .error{background:var(--clay-light);color:#9a3f10;border:1px solid #f3cba3;padding:.65rem .85rem;border-radius:10px;font-size:.85rem;margin-bottom:.9rem;font-weight:500;}
+  .note{font-size:.8rem;color:var(--muted);margin-top:.5rem;}
+  .row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;}
+  .tabs{display:flex;gap:.3rem;flex-wrap:wrap;padding:.7rem 1.4rem;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:65px;z-index:9;overflow-x:auto;}
+  .tab{font-size:.85rem;font-weight:600;padding:.5rem .95rem;cursor:pointer;color:var(--muted);border-radius:20px;transition:all .15s ease;white-space:nowrap;}
+  .tab:hover{color:var(--moss-dark);}
+  .tab.active{color:#fff;background:linear-gradient(135deg,var(--moss),#6d28d9);}
+  .toolbar{display:flex;align-items:center;gap:.6rem;margin-bottom:1rem;}
+  .toolbar h2{margin:0;font-size:1.15rem;font-weight:700;letter-spacing:-.01em;}
+  .count{font-size:.78rem;color:var(--muted);font-weight:500;}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  th{text-align:start;padding:.5rem .5rem;color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:1.5px solid var(--line);}
+  td{text-align:start;padding:.65rem .5rem;border-bottom:1px solid var(--line);}
+  .badge{display:inline-block;font-size:.7rem;font-weight:600;padding:.2rem .6rem;border-radius:20px;}
+  .badge.paid{background:var(--good-light);color:var(--good);}
+  .badge.pay_later{background:var(--clay-light);color:var(--clay);}
+  .badge.overdue{background:#fde3e3;color:#c0311a;}
+  .badge.active{background:var(--good-light);color:var(--good);}
+  .student-row{display:flex;align-items:center;gap:.8rem;padding:.7rem 0;border-bottom:1px solid var(--line);}
+  .student-row:last-child{border-bottom:none;}
+  .student-row img.avatar,.avatar-placeholder{width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--moss-light);flex-shrink:0;}
+  .student-info{flex:1;min-width:0;}
+  .student-info .name{font-weight:700;font-size:.92rem;}
+  .student-info .meta{font-size:.78rem;color:var(--muted);margin-top:.1rem;}
+  .sq-grid{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.7rem;}
+  .sq{width:58px;text-align:center;font-size:.7rem;cursor:pointer;font-weight:500;color:var(--muted);}
+  .sq .box{width:38px;height:38px;border:2px solid var(--line);border-radius:10px;margin:0 auto .25rem;display:flex;align-items:center;justify-content:center;font-size:1.1rem;background:#fff;transition:all .12s ease;}
+  .sq .box.present{background:var(--good);border-color:var(--good);color:#fff;}
+  .sq .box.absent{background:#fde3e3;border-color:#e0492a;color:#c0311a;}
+  .bar-row{display:flex;align-items:center;gap:.7rem;font-size:.82rem;margin:.5rem 0;}
+  .bar-label{width:70px;color:var(--muted);flex-shrink:0;font-weight:500;}
+  .bar-track{flex:1;background:var(--paper);border-radius:6px;height:16px;overflow:hidden;}
+  .bar-fill{background:linear-gradient(90deg,var(--moss),#7c3aed);height:100%;border-radius:6px;}
+  .bar-val{width:90px;text-align:end;flex-shrink:0;font-weight:600;}
+  .kpi-grid{display:flex;gap:.8rem;flex-wrap:wrap;margin-bottom:1.1rem;}
+  .kpi{flex:1;min-width:130px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem 1.05rem;box-shadow:var(--shadow);}
+  .kpi .num{font-size:1.55rem;font-weight:800;color:var(--moss-dark);letter-spacing:-.02em;}
+  .kpi .lbl{font-size:.74rem;color:var(--muted);font-weight:500;margin-top:.1rem;}
+  .kpi.accent{background:linear-gradient(135deg,var(--moss),#6d28d9);}
+  .kpi.accent .num,.kpi.accent .lbl{color:#fff;}
+  #camView{width:100%;max-width:320px;border-radius:12px;}
+  .link-btn{background:none;border:none;color:var(--moss-dark);font-size:.85rem;cursor:pointer;font-weight:600;padding:0;margin-inline-end:1rem;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(22,26,43,.45);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50;backdrop-filter:blur(2px);}
+  .modal{background:#fff;border-radius:18px;padding:1.4rem;max-width:420px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px -20px rgba(23,24,54,.4);}
+</style>
+</head>
+<body>
+<div class="brand">
+  <div class="mark" id="brandMark">SM</div>
+  <h1 id="appTitle">School Manager</h1>
+  <span class="role-badge" id="roleBadge" style="display:none;"></span>
+  <div class="lang-switch" id="langSwitch">
+    <button class="lang-btn" data-lang="en">EN</button>
+    <button class="lang-btn" data-lang="fr">FR</button>
+    <button class="lang-btn" data-lang="ar">ع</button>
+  </div>
+</div>
+<div id="root"></div>
+
+<div id="iosInstallBanner" style="display:none;position:fixed;left:.75rem;right:.75rem;bottom:.75rem;z-index:9999;background:#1c1e2b;color:#fff;border-radius:14px;padding:.9rem 1rem;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);font-size:.9rem;line-height:1.4;">
+  <div style="display:flex;gap:.75rem;align-items:flex-start;">
+    <div style="flex:1;">
+      <strong id="iosInstallTitle">Install this app</strong>
+      <div id="iosInstallBody" style="opacity:.85;margin-top:.15rem;"></div>
+    </div>
+    <button id="iosInstallDismiss" aria-label="Dismiss" style="background:none;border:none;color:#fff;opacity:.7;font-size:1.2rem;line-height:1;cursor:pointer;padding:.2rem .3rem;">×</button>
+  </div>
+</div>
+
+<script>
+const root = document.getElementById('root');
+const roleBadge = document.getElementById('roleBadge');
+const appTitleEl = document.getElementById('appTitle');
+const langSwitch = document.getElementById('langSwitch');
+const brandMark = document.getElementById('brandMark');
+
+const EDGE_FUNCTION_URL = 'https://ndlagksiynvqrysadwig.supabase.co/functions/v1/api';
+
+function getDeviceId() {
+  const KEY = 'sm_device_id';
+  try {
+    let id = localStorage.getItem(KEY);
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem(KEY, id); }
+    return id;
+  } catch { return crypto.randomUUID(); }
+}
+const DEVICE_ID = getDeviceId();
+
+const VALID_LEVELS = ['1AP','2AP','3AP','4AP','5AP','1AM','2AM','3AM','4AM','1AS','2AS','3AS'];
+
+// ---------------- TRANSLATIONS ----------------
+const translations = {
+  en: {
+    appTitle: 'School Manager',
+    gateTitle: 'Enter your license key',
+    licenseKeyLabel: 'License key',
+    unlockBtn: 'Unlock', checking: 'Checking…', demoBtn: 'Try demo (no setup)',
+    enterLicenseError: 'Enter your license key.',
+    loginTitle: 'Log in', signupTitle: 'Create your account',
+    authNote: "This account belongs to your school (this license key). Admin can suspend individual accounts if fraud is suspected.",
+    emailLabel: 'Email', passwordLabel: 'Password', passwordHintSignup: 'At least 6 characters',
+    loginBtn: 'Log in', signupBtn: 'Sign up', pleaseWait: 'Please wait…',
+    switchToSignup: 'No account yet? Sign up', switchToLogin: 'Already have an account? Log in',
+    backToLicense: '← Use a different license key', authFillBoth: 'Enter both email and password.',
+    forgotPasswordLink: 'Forgot password?', forgotTitle: 'Reset your password',
+    forgotIntro: 'Enter your account email and we\'ll send a reset code.',
+    forgotSendCodeBtn: 'Send reset code', forgotCodeSentNote: 'If that account exists, a reset code has been sent. Check your email.',
+    forgotCodeLabel: 'Reset code (6 digits)', forgotNewPasswordLabel: 'New password',
+    forgotResetBtn: 'Reset password', forgotBackToLogin: '← Back to log in',
+    forgotDoneNote: 'Password reset. You can log in now.', forgotResendBtn: 'Send a new code',
+    fraudTitle: 'Fraud control — School accounts', logout: 'Log out',
+    colEmail: 'Email', colLicense: 'License', colStatus: 'Status', colActions: '',
+    statusSuspended: 'Suspended', statusActive: 'Active', suspendBtn: 'Suspend', unsuspendBtn: 'Unsuspend',
+    deleteAccountBtn: 'Delete', deleteAccountConfirm: 'Delete this account permanently? This cannot be undone.',
+    noAccounts: 'No school accounts have signed up yet.', deviceUsageTitle: 'Device usage per license',
+    colLicenseKey: 'License key', colRole: 'Role', colDevicesUsed: 'Devices used', colMaxDevices: 'Max devices',
+    deleteLicenseBtn: 'Delete', deleteLicenseConfirm: 'Delete this license key permanently? This will remove the school, its accounts, and all its data. This cannot be undone.',
+    cannotDeleteOwnLicense: 'You cannot delete the license key you are currently using.',
+    createLicenseTitle: 'Create a new license key', licenseRoleLabel: 'Role',
+    roleUserOption: 'School (user)', roleAdminOption: 'Admin', maxDevicesLabel: 'Max devices',
+    createLicenseBtn: 'Create license', newLicenseCreated: 'New license key created — share it with the school:',
+    changePasswordTitle: 'Change password', currentPasswordLabel: 'Current password',
+    newPasswordLabel: 'New password', changePasswordBtn: 'Update password',
+    changePasswordSuccess: 'Password updated.',
+    tabDashboard: 'Dashboard', tabStudents: 'Students', tabGroups: 'Groups', tabTeachers: 'Teachers', tabCalculator: 'Calculator', tabAttendance: 'Attendance', tabStatistics: 'Statistics',
+    calcTitle: 'Payment calculator', calcIntro: 'Split each group\'s revenue between the teacher and the school by percentage.',
+    calcQuickTitle: 'Quick calculator', calcAmountLabel: 'Total amount (DA)', calcPercentLabel: 'Teacher share (%)',
+    calcTeacherAmount: 'Teacher payment', calcSchoolAmount: 'School payment',
+    calcPerGroupTitle: 'Per-group split', calcPerGroupHint: 'Revenue = students × price per cycle. Set each group\'s teacher percentage — it\'s saved on this device.',
+    colTeacherPercent: 'Teacher %', colTeacherPayment: 'Teacher payment', colSchoolPayment: 'School payment',
+    calcTotalsRow: 'Totals', calcByTeacherTitle: 'Totals per teacher', calcNoTeacher: 'No teacher assigned',
+    calcGroupsCol: 'Groups',
+    inscriptionAmountLabel: 'Amount paid at enrollment (DA)', inscriptionAmountHint: 'Leave 0 if nothing was paid yet',
+    statsTitle: 'Statistics', statsByLevel: 'Students by level', statsByGroup: 'Groups — students, attendance rate, revenue',
+    statsPaymentBreakdown: 'Payment status breakdown', statsNoData: 'Not enough data yet.',
+    colGroup: 'Group', colStudentCount: 'Students', colAttendanceRate: 'Attendance rate', colRevenue: 'Revenue',
+    tabSettings: 'Settings', settingsTitle: 'School branding',
+    schoolNameLabel: 'School name', schoolNameHint: 'Shown at the top of the app instead of "School Manager"',
+    logoLabel: 'Logo', logoHint: 'Square images work best',
+    saveBrandingBtn: 'Save', brandingSaved: 'Branding updated.',
+    kpiStudents: 'Students', kpiGroups: 'Groups', kpiTeachers: 'Teachers', kpiOverdue: 'Payments overdue',
+    revenueMonthly: 'Revenue — monthly', revenueAnnual: 'Revenue — annual',
+    noPayments: 'No payments recorded yet.', paymentRemindersTitle: 'Payment reminders',
+    allPaidUp: 'Everyone is paid up. 🎉', cycleDue: 'Cycle {n} — due {date}',
+    overdueNotify: 'Overdue — notify', pending: 'Pending', markPaid: 'Mark paid',
+    renewBtn: 'Renew subscription', renewModalTitle: 'Renew subscription',
+    renewAmountLabel: 'Renewal amount (DA)', renewAmountHint: 'Leave 0 to use the group price',
+    kpiRevenueMonth: 'Revenue this month', kpiRevenueYear: 'Revenue this year', kpiRevenueTotal: 'Total revenue',
+    studentsTitle: 'Students', onFile: '{n} on file', addStudentTitle: 'Add a student', editStudentTitle: 'Edit student',
+    fullNameLabel: 'Full name', phoneLabel: 'Phone number', groupLabel: 'Group', noneOption: '— none —',
+    photoLabel: 'Photo', useCameraBtn: 'Use camera', captureBtn: 'Capture',
+    addStudentBtn: 'Add student', saveBtn: 'Save', cancelBtn: 'Cancel', editBtn: 'Edit',
+    importExportTitle: 'Import / Export', exportPdfBtn: 'Export PDF (with QR)', exportWordBtn: 'Export Word',
+    importNote: "Import reads a CSV with columns: full_name, phone_number, group_name. (PDF/Word aren't structured formats, so import uses CSV; export still produces PDF and Word files.)",
+    noStudents: 'No students yet.', badgePaid: 'Paid', badgePayLater: 'Pay later', badgeOverdue: 'Overdue',
+    deleteBtn: 'Delete', fullNamePhoneRequired: 'Full name and phone number are both required.',
+    groupsTitle: 'Groups', groupsCount: '{n} groups', addGroupTitle: 'Add a group',
+    groupNameLabel: 'Group name', levelLabel: 'Algerian level', teacherLabel: 'Teacher',
+    priceLabel: 'Price per cycle (4 séances = 1 month), DA', addGroupBtn: 'Add group',
+    noGroups: 'No groups yet.', dashLabel: '—', groupNameRequired: 'Group name is required.',
+    teachersTitle: 'Teachers', teachersCount: '{n} teachers', teacherNameLabel: 'Full name',
+    addTeacherBtn: 'Add teacher', noTeachers: 'No teachers yet.', teacherNameRequired: 'Teacher name is required.',
+    attendanceTitle: 'Attendance', selectGroupOption: '— select a group —', dateLabel: 'Date',
+    scanBtn: 'Scan QR to mark present', stopScanBtn: 'Stop scanning',
+    sqNote: 'Tap a square to toggle: empty = not marked, green = present, red = absent. 4 present sessions complete one month cycle.',
+    pickGroupNote: 'Pick a group to see its students.',
+    cameraError: 'Could not access the camera — check your browser permissions.',
+    scanCameraError: 'Could not access the camera for scanning.',
+    markedPresent: 'Marked present: {name}',
+    calcSavedNote: 'Saved automatically — reopens with your last calculation.',
+    markAllPresentBtn: 'Mark all present', clearAllBtn: 'Clear all',
+    attSummary: '{present} present · {absent} absent · {total} total',
+    savedTick: 'Saved',
+    iosInstallTitle: 'Install this app',
+    iosInstallBody: 'Tap Share, then "Add to Home Screen" for the full app experience.',
+  },
+  fr: {
+    appTitle: 'Gestionnaire Scolaire',
+    gateTitle: 'Entrez votre clé de licence',
+    licenseKeyLabel: 'Clé de licence',
+    unlockBtn: 'Déverrouiller', checking: 'Vérification…', demoBtn: 'Essayer la démo (sans configuration)',
+    enterLicenseError: 'Entrez votre clé de licence.',
+    loginTitle: 'Se connecter', signupTitle: 'Créer votre compte',
+    authNote: "Ce compte appartient à votre école (cette clé de licence). L'administrateur peut suspendre un compte en cas de fraude.",
+    emailLabel: 'E-mail', passwordLabel: 'Mot de passe', passwordHintSignup: 'Au moins 6 caractères',
+    loginBtn: 'Se connecter', signupBtn: "S'inscrire", pleaseWait: 'Veuillez patienter…',
+    switchToSignup: "Pas encore de compte ? S'inscrire", switchToLogin: 'Déjà un compte ? Se connecter',
+    backToLicense: '← Utiliser une autre clé de licence', authFillBoth: "Entrez l'e-mail et le mot de passe.",
+    forgotPasswordLink: 'Mot de passe oublié ?', forgotTitle: 'Réinitialiser votre mot de passe',
+    forgotIntro: "Entrez l'e-mail de votre compte, nous vous enverrons un code de réinitialisation.",
+    forgotSendCodeBtn: 'Envoyer le code', forgotCodeSentNote: "Si ce compte existe, un code a été envoyé. Vérifiez votre e-mail.",
+    forgotCodeLabel: 'Code de réinitialisation (6 chiffres)', forgotNewPasswordLabel: 'Nouveau mot de passe',
+    forgotResetBtn: 'Réinitialiser le mot de passe', forgotBackToLogin: '← Retour à la connexion',
+    forgotDoneNote: 'Mot de passe réinitialisé. Vous pouvez vous connecter.', forgotResendBtn: 'Envoyer un nouveau code',
+    fraudTitle: 'Contrôle anti-fraude — Comptes des écoles', logout: 'Se déconnecter',
+    colEmail: 'E-mail', colLicense: 'Licence', colStatus: 'Statut', colActions: '',
+    statusSuspended: 'Suspendu', statusActive: 'Actif', suspendBtn: 'Suspendre', unsuspendBtn: 'Réactiver',
+    deleteAccountBtn: 'Supprimer', deleteAccountConfirm: 'Supprimer définitivement ce compte ? Cette action est irréversible.',
+    noAccounts: "Aucun compte d'école inscrit pour l'instant.", deviceUsageTitle: 'Appareils utilisés par licence',
+    colLicenseKey: 'Clé de licence', colRole: 'Rôle', colDevicesUsed: 'Appareils utilisés', colMaxDevices: "Nombre max. d'appareils",
+    deleteLicenseBtn: 'Supprimer', deleteLicenseConfirm: 'Supprimer définitivement cette clé de licence ? Cela supprimera l\'école, ses comptes et toutes ses données. Cette action est irréversible.',
+    cannotDeleteOwnLicense: "Vous ne pouvez pas supprimer la clé de licence que vous utilisez actuellement.",
+    createLicenseTitle: 'Créer une nouvelle clé de licence', licenseRoleLabel: 'Rôle',
+    roleUserOption: 'École (utilisateur)', roleAdminOption: 'Administrateur', maxDevicesLabel: "Nombre max. d'appareils",
+    createLicenseBtn: 'Créer la licence', newLicenseCreated: 'Nouvelle clé de licence créée — partagez-la avec l\'école :',
+    changePasswordTitle: 'Changer le mot de passe', currentPasswordLabel: 'Mot de passe actuel',
+    newPasswordLabel: 'Nouveau mot de passe', changePasswordBtn: 'Mettre à jour',
+    changePasswordSuccess: 'Mot de passe mis à jour.',
+    tabDashboard: 'Tableau de bord', tabStudents: 'Élèves', tabGroups: 'Groupes', tabTeachers: 'Enseignants', tabCalculator: 'Calculatrice', tabAttendance: 'Présence', tabStatistics: 'Statistiques',
+    calcTitle: 'Calculatrice de paiement', calcIntro: "Répartissez les revenus de chaque groupe entre l'enseignant et l'école, en pourcentage.",
+    calcQuickTitle: 'Calcul rapide', calcAmountLabel: 'Montant total (DA)', calcPercentLabel: "Part de l'enseignant (%)",
+    calcTeacherAmount: "Paiement de l'enseignant", calcSchoolAmount: "Paiement de l'école",
+    calcPerGroupTitle: 'Répartition par groupe', calcPerGroupHint: 'Revenus = élèves × prix par cycle. Réglez le pourcentage de chaque groupe — il est enregistré sur cet appareil.',
+    colTeacherPercent: 'Ens. %', colTeacherPayment: "Paiement enseignant", colSchoolPayment: 'Paiement école',
+    calcTotalsRow: 'Totaux', calcByTeacherTitle: 'Totaux par enseignant', calcNoTeacher: 'Aucun enseignant assigné',
+    calcGroupsCol: 'Groupes',
+    inscriptionAmountLabel: "Montant payé à l'inscription (DA)", inscriptionAmountHint: "Laissez 0 si rien n'a encore été payé",
+    statsTitle: 'Statistiques', statsByLevel: 'Élèves par niveau', statsByGroup: "Groupes — élèves, taux de présence, revenus",
+    statsPaymentBreakdown: 'Répartition des paiements', statsNoData: 'Pas encore assez de données.',
+    colGroup: 'Groupe', colStudentCount: 'Élèves', colAttendanceRate: 'Taux de présence', colRevenue: 'Revenus',
+    tabSettings: 'Paramètres', settingsTitle: "Image de l'école",
+    schoolNameLabel: "Nom de l'école", schoolNameHint: 'Affiché en haut de l\'application à la place de « School Manager »',
+    logoLabel: 'Logo', logoHint: 'Les images carrées fonctionnent mieux',
+    saveBrandingBtn: 'Enregistrer', brandingSaved: 'Personnalisation mise à jour.',
+    kpiStudents: 'Élèves', kpiGroups: 'Groupes', kpiTeachers: 'Enseignants', kpiOverdue: 'Paiements en retard',
+    revenueMonthly: 'Revenus — mensuel', revenueAnnual: 'Revenus — annuel',
+    noPayments: 'Aucun paiement enregistré.', paymentRemindersTitle: 'Rappels de paiement',
+    allPaidUp: 'Tout le monde est à jour. 🎉', cycleDue: 'Cycle {n} — échéance {date}',
+    overdueNotify: 'En retard — notifier', pending: 'En attente', markPaid: 'Marquer payé',
+    renewBtn: "Renouveler l'abonnement", renewModalTitle: "Renouveler l'abonnement",
+    renewAmountLabel: 'Montant du renouvellement (DA)', renewAmountHint: 'Laissez 0 pour utiliser le prix du groupe',
+    kpiRevenueMonth: 'Revenus ce mois-ci', kpiRevenueYear: 'Revenus cette année', kpiRevenueTotal: 'Revenus totaux',
+    studentsTitle: 'Élèves', onFile: '{n} inscrits', addStudentTitle: 'Ajouter un élève', editStudentTitle: "Modifier l'élève",
+    fullNameLabel: 'Nom complet', phoneLabel: 'Numéro de téléphone', groupLabel: 'Groupe', noneOption: '— aucun —',
+    photoLabel: 'Photo', useCameraBtn: 'Utiliser la caméra', captureBtn: 'Capturer',
+    addStudentBtn: 'Ajouter', saveBtn: 'Enregistrer', cancelBtn: 'Annuler', editBtn: 'Modifier',
+    importExportTitle: 'Importer / Exporter', exportPdfBtn: 'Exporter en PDF (avec QR)', exportWordBtn: 'Exporter en Word',
+    importNote: "L'import lit un CSV avec les colonnes : full_name, phone_number, group_name. (Le PDF/Word ne sont pas des formats structurés, donc l'import utilise le CSV ; l'export produit toujours des fichiers PDF et Word.)",
+    noStudents: "Aucun élève pour l'instant.", badgePaid: 'Payé', badgePayLater: 'À payer', badgeOverdue: 'En retard',
+    deleteBtn: 'Supprimer', fullNamePhoneRequired: 'Le nom complet et le téléphone sont obligatoires.',
+    groupsTitle: 'Groupes', groupsCount: '{n} groupes', addGroupTitle: 'Ajouter un groupe',
+    groupNameLabel: 'Nom du groupe', levelLabel: 'Niveau (système algérien)', teacherLabel: 'Enseignant',
+    priceLabel: 'Prix par cycle (4 séances = 1 mois), DA', addGroupBtn: 'Ajouter le groupe',
+    noGroups: "Aucun groupe pour l'instant.", dashLabel: '—', groupNameRequired: 'Le nom du groupe est requis.',
+    teachersTitle: 'Enseignants', teachersCount: '{n} enseignants', teacherNameLabel: 'Nom complet',
+    addTeacherBtn: 'Ajouter un enseignant', noTeachers: "Aucun enseignant pour l'instant.", teacherNameRequired: "Le nom de l'enseignant est requis.",
+    attendanceTitle: 'Présence', selectGroupOption: '— choisir un groupe —', dateLabel: 'Date',
+    scanBtn: 'Scanner un QR pour marquer présent', stopScanBtn: "Arrêter le scan",
+    sqNote: 'Touchez une case : vide = non marqué, vert = présent, rouge = absent. 4 séances présentes = un cycle mensuel.',
+    pickGroupNote: 'Choisissez un groupe pour voir ses élèves.',
+    cameraError: "Impossible d'accéder à la caméra — vérifiez les autorisations du navigateur.",
+    scanCameraError: "Impossible d'accéder à la caméra pour le scan.",
+    markedPresent: 'Marqué présent : {name}',
+    calcSavedNote: 'Enregistré automatiquement — retrouvez votre dernier calcul à la réouverture.',
+    markAllPresentBtn: 'Tout marquer présent', clearAllBtn: 'Tout effacer',
+    attSummary: '{present} présents · {absent} absents · {total} au total',
+    savedTick: 'Enregistré',
+    iosInstallTitle: 'Installer l\'application',
+    iosInstallBody: 'Appuyez sur Partager, puis « Sur l\'écran d\'accueil » pour une expérience complète.',
+  },
+  ar: {
+    appTitle: 'مدير المدرسة',
+    gateTitle: 'أدخل مفتاح الترخيص',
+    licenseKeyLabel: 'مفتاح الترخيص',
+    unlockBtn: 'فتح', checking: 'جارٍ التحقق…', demoBtn: 'جرّب النسخة التجريبية (بدون إعداد)',
+    enterLicenseError: 'أدخل مفتاح الترخيص.',
+    loginTitle: 'تسجيل الدخول', signupTitle: 'إنشاء حسابك',
+    authNote: 'هذا الحساب تابع لمدرستك (مفتاح الترخيص هذا). يمكن للمشرف تعليق حساب معيّن في حال الاشتباه بالاحتيال.',
+    emailLabel: 'البريد الإلكتروني', passwordLabel: 'كلمة المرور', passwordHintSignup: '6 أحرف على الأقل',
+    loginBtn: 'تسجيل الدخول', signupBtn: 'إنشاء حساب', pleaseWait: 'يرجى الانتظار…',
+    switchToSignup: 'ليس لديك حساب؟ أنشئ حساباً', switchToLogin: 'لديك حساب بالفعل؟ سجّل الدخول',
+    backToLicense: '← استخدام مفتاح ترخيص آخر', authFillBoth: 'أدخل البريد الإلكتروني وكلمة المرور.',
+    forgotPasswordLink: 'نسيت كلمة المرور؟', forgotTitle: 'إعادة تعيين كلمة المرور',
+    forgotIntro: 'أدخل بريد حسابك الإلكتروني وسنرسل لك رمز إعادة تعيين.',
+    forgotSendCodeBtn: 'إرسال رمز إعادة التعيين', forgotCodeSentNote: 'إذا كان هذا الحساب موجوداً، فقد تم إرسال رمز. تحقق من بريدك الإلكتروني.',
+    forgotCodeLabel: 'رمز إعادة التعيين (6 أرقام)', forgotNewPasswordLabel: 'كلمة المرور الجديدة',
+    forgotResetBtn: 'إعادة تعيين كلمة المرور', forgotBackToLogin: '← العودة لتسجيل الدخول',
+    forgotDoneNote: 'تمت إعادة تعيين كلمة المرور. يمكنك تسجيل الدخول الآن.', forgotResendBtn: 'إرسال رمز جديد',
+    fraudTitle: 'مكافحة الاحتيال — حسابات المدارس', logout: 'تسجيل الخروج',
+    colEmail: 'البريد الإلكتروني', colLicense: 'الترخيص', colStatus: 'الحالة', colActions: '',
+    statusSuspended: 'موقوف', statusActive: 'نشط', suspendBtn: 'إيقاف', unsuspendBtn: 'إلغاء الإيقاف',
+    deleteAccountBtn: 'حذف', deleteAccountConfirm: 'حذف هذا الحساب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+    noAccounts: 'لا توجد حسابات مدارس مسجّلة بعد.', deviceUsageTitle: 'استخدام الأجهزة لكل ترخيص',
+    colLicenseKey: 'مفتاح الترخيص', colRole: 'الدور', colDevicesUsed: 'الأجهزة المستخدمة', colMaxDevices: 'الحد الأقصى للأجهزة',
+    deleteLicenseBtn: 'حذف', deleteLicenseConfirm: 'حذف مفتاح الترخيص هذا نهائياً؟ سيؤدي هذا إلى حذف المدرسة وحساباتها وجميع بياناتها. لا يمكن التراجع عن هذا الإجراء.',
+    cannotDeleteOwnLicense: 'لا يمكنك حذف مفتاح الترخيص الذي تستخدمه حالياً.',
+    createLicenseTitle: 'إنشاء مفتاح ترخيص جديد', licenseRoleLabel: 'الدور',
+    roleUserOption: 'مدرسة (مستخدم)', roleAdminOption: 'مشرف', maxDevicesLabel: 'الحد الأقصى للأجهزة',
+    createLicenseBtn: 'إنشاء الترخيص', newLicenseCreated: 'تم إنشاء مفتاح ترخيص جديد — شاركه مع المدرسة:',
+    changePasswordTitle: 'تغيير كلمة المرور', currentPasswordLabel: 'كلمة المرور الحالية',
+    newPasswordLabel: 'كلمة المرور الجديدة', changePasswordBtn: 'تحديث كلمة المرور',
+    changePasswordSuccess: 'تم تحديث كلمة المرور.',
+    tabDashboard: 'لوحة التحكم', tabStudents: 'الطلاب', tabGroups: 'المجموعات', tabTeachers: 'الأساتذة', tabCalculator: 'الحاسبة', tabAttendance: 'الحضور', tabStatistics: 'الإحصائيات',
+    calcTitle: 'حاسبة الدفع', calcIntro: 'وزّع إيرادات كل مجموعة بين الأستاذ والمدرسة حسب نسبة مئوية.',
+    calcQuickTitle: 'حساب سريع', calcAmountLabel: 'المبلغ الإجمالي (دج)', calcPercentLabel: 'نسبة الأستاذ (%)',
+    calcTeacherAmount: 'مستحقات الأستاذ', calcSchoolAmount: 'مستحقات المدرسة',
+    calcPerGroupTitle: 'التوزيع حسب المجموعة', calcPerGroupHint: 'الإيرادات = عدد الطلاب × السعر لكل دورة. اضبط نسبة كل مجموعة — تُحفظ على هذا الجهاز.',
+    colTeacherPercent: 'نسبة الأستاذ %', colTeacherPayment: 'مستحقات الأستاذ', colSchoolPayment: 'مستحقات المدرسة',
+    calcTotalsRow: 'المجموع', calcByTeacherTitle: 'المجموع لكل أستاذ', calcNoTeacher: 'لا يوجد أستاذ معيّن',
+    calcGroupsCol: 'المجموعات',
+    inscriptionAmountLabel: 'المبلغ المدفوع عند التسجيل (دج)', inscriptionAmountHint: 'اتركه 0 إذا لم يُدفع شيء بعد',
+    statsTitle: 'الإحصائيات', statsByLevel: 'الطلاب حسب المستوى', statsByGroup: 'المجموعات — الطلاب، نسبة الحضور، الإيرادات',
+    statsPaymentBreakdown: 'توزيع حالة الدفع', statsNoData: 'لا توجد بيانات كافية بعد.',
+    colGroup: 'المجموعة', colStudentCount: 'الطلاب', colAttendanceRate: 'نسبة الحضور', colRevenue: 'الإيرادات',
+    tabSettings: 'الإعدادات', settingsTitle: 'شعار المدرسة',
+    schoolNameLabel: 'اسم المدرسة', schoolNameHint: 'يظهر أعلى التطبيق بدلاً من "مدير المدرسة"',
+    logoLabel: 'الشعار', logoHint: 'الصور المربعة أفضل',
+    saveBrandingBtn: 'حفظ', brandingSaved: 'تم تحديث الشعار والاسم.',
+    kpiStudents: 'الطلاب', kpiGroups: 'المجموعات', kpiTeachers: 'الأساتذة', kpiOverdue: 'مدفوعات متأخرة',
+    revenueMonthly: 'الإيرادات — شهرياً', revenueAnnual: 'الإيرادات — سنوياً',
+    noPayments: 'لا توجد مدفوعات مسجلة بعد.', paymentRemindersTitle: 'تذكيرات الدفع',
+    allPaidUp: 'الجميع سدّد المستحقات. 🎉', cycleDue: 'الدورة {n} — تاريخ الاستحقاق {date}',
+    overdueNotify: 'متأخر — إشعار', pending: 'قيد الانتظار', markPaid: 'تحديد كمدفوع',
+    renewBtn: 'تجديد الاشتراك', renewModalTitle: 'تجديد الاشتراك',
+    renewAmountLabel: 'مبلغ التجديد (دج)', renewAmountHint: 'اتركه 0 لاستخدام سعر المجموعة',
+    kpiRevenueMonth: 'إيرادات هذا الشهر', kpiRevenueYear: 'إيرادات هذه السنة', kpiRevenueTotal: 'إجمالي الإيرادات',
+    studentsTitle: 'الطلاب', onFile: '{n} مسجّل', addStudentTitle: 'إضافة طالب', editStudentTitle: 'تعديل بيانات الطالب',
+    fullNameLabel: 'الاسم الكامل', phoneLabel: 'رقم الهاتف', groupLabel: 'المجموعة', noneOption: '— بدون —',
+    photoLabel: 'الصورة', useCameraBtn: 'استخدام الكاميرا', captureBtn: 'التقاط',
+    addStudentBtn: 'إضافة الطالب', saveBtn: 'حفظ', cancelBtn: 'إلغاء', editBtn: 'تعديل',
+    importExportTitle: 'استيراد / تصدير', exportPdfBtn: 'تصدير PDF (مع QR)', exportWordBtn: 'تصدير Word',
+    importNote: 'يقرأ الاستيراد ملف CSV بالأعمدة: full_name, phone_number, group_name. (ملفات PDF/Word ليست بصيغة منظمة، لذا يستخدم الاستيراد CSV؛ بينما يظل التصدير ينتج ملفات PDF و Word.)',
+    noStudents: 'لا يوجد طلاب بعد.', badgePaid: 'مدفوع', badgePayLater: 'الدفع لاحقاً', badgeOverdue: 'متأخر',
+    deleteBtn: 'حذف', fullNamePhoneRequired: 'الاسم الكامل ورقم الهاتف مطلوبان.',
+    groupsTitle: 'المجموعات', groupsCount: '{n} مجموعة', addGroupTitle: 'إضافة مجموعة',
+    groupNameLabel: 'اسم المجموعة', levelLabel: 'المستوى (النظام الجزائري)', teacherLabel: 'الأستاذ',
+    priceLabel: 'السعر لكل دورة (4 حصص = شهر واحد)، دج', addGroupBtn: 'إضافة المجموعة',
+    noGroups: 'لا توجد مجموعات بعد.', dashLabel: '—', groupNameRequired: 'اسم المجموعة مطلوب.',
+    teachersTitle: 'الأساتذة', teachersCount: '{n} أستاذ', teacherNameLabel: 'الاسم الكامل',
+    addTeacherBtn: 'إضافة أستاذ', noTeachers: 'لا يوجد أساتذة بعد.', teacherNameRequired: 'اسم الأستاذ مطلوب.',
+    attendanceTitle: 'الحضور', selectGroupOption: '— اختر مجموعة —', dateLabel: 'التاريخ',
+    scanBtn: 'مسح رمز QR لتسجيل الحضور', stopScanBtn: 'إيقاف المسح',
+    sqNote: 'اضغط على المربع للتبديل: فارغ = غير مسجل، أخضر = حاضر، أحمر = غائب. 4 حصص حضور تكمل دورة شهرية.',
+    pickGroupNote: 'اختر مجموعة لرؤية طلابها.',
+    cameraError: 'تعذر الوصول إلى الكاميرا — تحقق من أذونات المتصفح.',
+    scanCameraError: 'تعذر الوصول إلى الكاميرا للمسح.',
+    markedPresent: 'تم تسجيل الحضور: {name}',
+    calcSavedNote: 'يُحفظ تلقائيًا — سيظهر آخر حساب عند إعادة الفتح.',
+    markAllPresentBtn: 'تعليم الكل حاضر', clearAllBtn: 'مسح الكل',
+    attSummary: '{present} حاضر · {absent} غائب · {total} المجموع',
+    savedTick: 'تم الحفظ',
+    iosInstallTitle: 'ثبّت هذا التطبيق',
+    iosInstallBody: 'اضغط على مشاركة، ثم "إضافة إلى الشاشة الرئيسية" للحصول على التجربة الكاملة.',
+  },
+};
+
+function t(key, vars) {
+  const dict = translations[state.lang] || translations.en;
+  let str = dict[key] ?? translations.en[key] ?? key;
+  if (vars) Object.keys(vars).forEach(k => { str = str.replace('{'+k+'}', vars[k]); });
+  return str;
+}
+
+function getInitialLang() {
+  try {
+    const saved = localStorage.getItem('sm_lang');
+    if (saved && translations[saved]) return saved;
+  } catch {}
+  const nav = (navigator.language || 'en').slice(0,2);
+  return translations[nav] ? nav : 'en';
+}
+
+let state = {
+  lang: getInitialLang(),
+  screen: 'gate', tab: 'dashboard',
+  licenseKey: '', role: null, sessionToken: '',
+  authMode: 'login', authEmail: '', authPassword: '',
+  forgotStep: 'request', forgotEmail: '', forgotCode: '', forgotNewPassword: '', forgotMsg: '',
+  changePwCurrent: '', changePwNew: '', changePwMsg: '',
+  adminNewLicenseRole: 'user', adminNewLicenseDevices: 5, adminCreatedLicense: null,
+  demoMode: false, error: '', loading: false,
+  students: [], groups: [], teachers: [], accounts: [], licenseUsage: [],
+  revenue: { monthly: {}, annual: {} },
+  statistics: null,
+  schoolName: '', logoUrl: '',
+  brandingNameInput: '', brandingLogoBase64: null,
+  capturedPhoto: null, stream: null,
+  editingStudent: null, // student object being edited, or null
+  renewingStudent: null, // student object being renewed, or null
+  attendanceGroupId: '', attendanceDate: new Date().toISOString().slice(0,10),
+  scanning: false, scanStream: null, scanMsg: '',
+  calcPercents: {}, calcQuickAmount: 0, calcQuickPercent: 50,
+  attendanceCache: {}, attSavedFlash: false,
+};
+
+function loadCalcPercents() {
+  try { return JSON.parse(localStorage.getItem('sm_calc_percents') || '{}'); } catch { return {}; }
+}
+function saveCalcPercents() {
+  try { localStorage.setItem('sm_calc_percents', JSON.stringify(state.calcPercents)); } catch {}
+}
+state.calcPercents = loadCalcPercents();
+
+// Quick calculator: remember the last amount/percent typed, so reopening the app
+// (or switching tabs) doesn't lose the last calculation.
+function loadCalcQuick() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('sm_calc_quick') || 'null');
+    if (saved && typeof saved === 'object') return saved;
+  } catch {}
+  return { amount: 0, percent: 50 };
+}
+function saveCalcQuick() {
+  try { localStorage.setItem('sm_calc_quick', JSON.stringify({ amount: state.calcQuickAmount, percent: state.calcQuickPercent })); } catch {}
+}
+{
+  const savedQuick = loadCalcQuick();
+  state.calcQuickAmount = savedQuick.amount || 0;
+  state.calcQuickPercent = savedQuick.percent ?? 50;
+}
+
+// Manual attendance marks: cached locally by license + date + student so the small
+// present/absent squares stay filled in when reopening the Attendance tab, switching
+// tabs, or reloading the app (works fully offline in demo mode too).
+function attendanceStoreKey() {
+  return 'sm_attendance_' + (state.licenseKey ? state.licenseKey.trim() : 'demo');
+}
+function loadAttendanceCache() {
+  try { return JSON.parse(localStorage.getItem(attendanceStoreKey()) || '{}'); } catch { return {}; }
+}
+function saveAttendanceCache() {
+  try { localStorage.setItem(attendanceStoreKey(), JSON.stringify(state.attendanceCache)); } catch {}
+}
+function attendanceCacheKey(studentId, date) { return date + '::' + studentId; }
+function setAttendanceMark(studentId, date, status) {
+  const key = attendanceCacheKey(studentId, date);
+  if (status) state.attendanceCache[key] = status;
+  else delete state.attendanceCache[key];
+  saveAttendanceCache();
+}
+function getAttendanceMark(studentId, date) {
+  return state.attendanceCache[attendanceCacheKey(studentId, date)] || null;
+}
+
+try {
+  const saved = JSON.parse(localStorage.getItem('sm_session') || 'null');
+  if (saved && saved.licenseKey && saved.role) {
+    state.licenseKey = saved.licenseKey; state.role = saved.role; state.sessionToken = saved.sessionToken || '';
+  }
+} catch {}
+state.attendanceCache = loadAttendanceCache();
+
+function saveSession() {
+  try { localStorage.setItem('sm_session', JSON.stringify({ licenseKey: state.licenseKey, role: state.role, sessionToken: state.sessionToken })); } catch {}
+}
+function clearSession() { try { localStorage.removeItem('sm_session'); } catch {} }
+
+function applyLangDom() {
+  document.documentElement.lang = state.lang;
+  document.documentElement.dir = state.lang === 'ar' ? 'rtl' : 'ltr';
+  appTitleEl.textContent = state.schoolName || t('appTitle');
+  if (state.logoUrl) {
+    brandMark.innerHTML = '';
+    brandMark.style.background = '#fff';
+    brandMark.style.padding = '0';
+    const img = document.createElement('img');
+    img.src = state.logoUrl; img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = '10px';
+    brandMark.appendChild(img);
+  } else {
+    brandMark.innerHTML = 'SM';
+    brandMark.style.background = '';
+    brandMark.style.padding = '';
+  }
+  langSwitch.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-lang') === state.lang));
+  updateIosInstallBannerText();
+}
+
+// ---------------- iOS "Add to Home Screen" banner ----------------
+// iOS Safari never fires `beforeinstallprompt` (Android/Chrome's native install
+// prompt), so without this, iPhone users have no way to discover that the app
+// can be installed. We detect iOS Safari specifically, skip it if the app is
+// already running standalone (added to the home screen) or was dismissed
+// before, and show simple manual instructions since iOS has no programmatic
+// "install" trigger a web page can call.
+function isIosSafari() {
+  const ua = window.navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+    (ua.includes('Macintosh') && 'ontouchend' in document); // iPadOS 13+ reports as Mac
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  return isIOS && isSafari;
+}
+function isStandalone() {
+  return window.navigator.standalone === true ||
+    window.matchMedia('(display-mode: standalone)').matches;
+}
+function updateIosInstallBannerText() {
+  const titleEl = document.getElementById('iosInstallTitle');
+  const bodyEl = document.getElementById('iosInstallBody');
+  if (titleEl) titleEl.textContent = t('iosInstallTitle');
+  if (bodyEl) bodyEl.textContent = t('iosInstallBody');
+}
+function initIosInstallBanner() {
+  if (!isIosSafari() || isStandalone()) return;
+  try { if (localStorage.getItem('sm_ios_install_dismissed') === '1') return; } catch {}
+  const banner = document.getElementById('iosInstallBanner');
+  if (!banner) return;
+  updateIosInstallBannerText();
+  banner.style.display = 'block';
+  document.getElementById('iosInstallDismiss').onclick = () => {
+    banner.style.display = 'none';
+    try { localStorage.setItem('sm_ios_install_dismissed', '1'); } catch {}
+  };
+}
+langSwitch.querySelectorAll('.lang-btn').forEach(btn => {
+  btn.onclick = () => { state.lang = btn.getAttribute('data-lang'); try { localStorage.setItem('sm_lang', state.lang); } catch {} render(); };
+});
+
+async function apiCall(action, payload) {
+  const res = await fetch(EDGE_FUNCTION_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-license-key': state.licenseKey.trim(), 'x-device-id': DEVICE_ID, 'x-session-token': state.sessionToken || '' },
+    body: JSON.stringify({ action, payload }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+function render() {
+  applyLangDom();
+  root.innerHTML = '';
+  roleBadge.style.display = state.screen === 'app' || state.screen === 'admin' ? 'inline-block' : 'none';
+  roleBadge.textContent = state.demoMode ? 'DEMO' : (state.role || '');
+  if (state.screen === 'gate') root.appendChild(renderGate());
+  else if (state.screen === 'auth') root.appendChild(renderAuth());
+  else if (state.screen === 'forgot') root.appendChild(renderForgot());
+  else if (state.screen === 'admin') root.appendChild(renderAdmin());
+  else root.appendChild(renderApp());
+}
+
+// ---------------- GATE ----------------
+function renderGate() {
+  const wrap = document.createElement('div');
+  wrap.className = 'wrap';
+  wrap.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">${t('gateTitle')}</h2>
+      ${state.error ? `<div class="error">${state.error}</div>` : ''}
+      <label for="licenseKey">${t('licenseKeyLabel')}</label>
+      <input type="text" id="licenseKey" value="${state.licenseKey}" placeholder="XXXX-XXXX-XXXX-XXXX">
+      <div class="row" style="margin-top:1rem;">
+        <button class="btn-primary" id="unlockBtn">${state.loading ? t('checking') : t('unlockBtn')}</button>
+        <button class="btn-secondary" id="demoBtn" type="button">${t('demoBtn')}</button>
+      </div>
+    </div>
+  `;
+  wrap.querySelector('#licenseKey').oninput = (e) => state.licenseKey = e.target.value;
+  wrap.querySelector('#unlockBtn').onclick = onUnlock;
+  wrap.querySelector('#demoBtn').onclick = () => {
+    state.demoMode = true; state.role = 'user'; state.screen = 'app';
+    state.students = [
+      { id: 'demo-1', full_name: 'Amina Belkacem', phone_number: '+213 555 010 203', photo_path: null, qr_value: 'demo-1', payment_status: 'paid', sessions_count: 2, cycle_number: 1, group_id: null },
+      { id: 'demo-2', full_name: 'Yanis Cherif', phone_number: '+213 555 044 981', photo_path: null, qr_value: 'demo-2', payment_status: 'pay_later', sessions_count: 0, cycle_number: 2, payment_overdue: true, group_id: null },
+    ];
+    state.groups = [{ id: 'demo-g1', name: 'Group A', level: '3AM', price_per_cycle: 2000, teacher_id: null }];
+    state.teachers = [{ id: 'demo-t1', full_name: 'Mr. Boudiaf' }];
+    render();
+  };
+  return wrap;
+}
+
+async function loadBranding() {
+  if (state.demoMode) return;
+  try {
+    const data = await apiCall('get_school_settings');
+    state.schoolName = data.school_name || '';
+    state.logoUrl = data.logo_url || '';
+  } catch {}
+}
+
+async function onUnlock() {
+  state.error = '';
+  if (!state.licenseKey.trim()) { state.error = t('enterLicenseError'); render(); return; }
+  state.loading = true; render();
+  try {
+    const data = await apiCall('check_license');
+    state.role = data.role; state.demoMode = false;
+    await loadBranding();
+    if (data.role === 'admin') { state.screen = 'admin'; await loadAdminData(); }
+    else { state.screen = 'auth'; }
+  } catch (e) { state.error = e.message || 'Could not reach the server. Check the key and try again.'; }
+  state.loading = false; render();
+}
+
+// ---------------- AUTH ----------------
+function renderAuth() {
+  const wrap = document.createElement('div');
+  wrap.className = 'wrap';
+  const isLogin = state.authMode === 'login';
+  wrap.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">${isLogin ? t('loginTitle') : t('signupTitle')}</h2>
+      <p class="note">${t('authNote')}</p>
+      ${state.error ? `<div class="error">${state.error}</div>` : ''}
+      <label for="authEmail">${t('emailLabel')}</label>
+      <input type="email" id="authEmail" value="${state.authEmail}" placeholder="owner@school.dz">
+      <label for="authPassword">${t('passwordLabel')}</label>
+      <input type="password" id="authPassword" value="${state.authPassword}" placeholder="${isLogin ? '' : t('passwordHintSignup')}">
+      <div class="row" style="margin-top:1rem;">
+        <button class="btn-primary" id="authBtn">${state.loading ? t('pleaseWait') : (isLogin ? t('loginBtn') : t('signupBtn'))}</button>
+      </div>
+      <p style="margin-top:1rem;"><button class="btn-text" id="switchAuth" type="button">${isLogin ? t('switchToSignup') : t('switchToLogin')}</button></p>
+      ${isLogin ? `<p><button class="btn-text" id="forgotBtn" type="button">${t('forgotPasswordLink')}</button></p>` : ''}
+      <p><button class="btn-text" id="backBtn" type="button">${t('backToLicense')}</button></p>
+    </div>
+  `;
+  wrap.querySelector('#authEmail').oninput = (e) => state.authEmail = e.target.value;
+  wrap.querySelector('#authPassword').oninput = (e) => state.authPassword = e.target.value;
+  wrap.querySelector('#switchAuth').onclick = () => { state.authMode = isLogin ? 'signup' : 'login'; state.error=''; render(); };
+  const forgotBtn = wrap.querySelector('#forgotBtn');
+  if (forgotBtn) forgotBtn.onclick = () => {
+    state.screen = 'forgot'; state.forgotStep = 'request'; state.forgotEmail = state.authEmail; state.forgotCode = ''; state.forgotNewPassword = ''; state.forgotMsg = ''; state.error = '';
+    render();
+  };
+  wrap.querySelector('#backBtn').onclick = () => { state.screen = 'gate'; state.sessionToken=''; clearSession(); render(); };
+  wrap.querySelector('#authBtn').onclick = onAuthSubmit;
+  return wrap;
+}
+
+// ---------------- FORGOT PASSWORD ----------------
+function renderForgot() {
+  const wrap = document.createElement('div');
+  wrap.className = 'wrap';
+  if (state.forgotStep === 'done') {
+    wrap.innerHTML = `
+      <div class="card">
+        <h2 style="margin-top:0;">${t('forgotTitle')}</h2>
+        <p class="note">${t('forgotDoneNote')}</p>
+        <div class="row" style="margin-top:1rem;">
+          <button class="btn-primary" id="toLoginBtn">${t('loginBtn')}</button>
+        </div>
+      </div>
+    `;
+    wrap.querySelector('#toLoginBtn').onclick = () => { state.screen = 'auth'; state.authMode = 'login'; state.authPassword=''; state.error=''; render(); };
+    return wrap;
+  }
+  if (state.forgotStep === 'code') {
+    wrap.innerHTML = `
+      <div class="card">
+        <h2 style="margin-top:0;">${t('forgotTitle')}</h2>
+        <p class="note">${t('forgotCodeSentNote')}</p>
+        ${state.error ? `<div class="error">${state.error}</div>` : ''}
+        <label for="forgotCode">${t('forgotCodeLabel')}</label>
+        <input type="text" id="forgotCode" value="${state.forgotCode}" inputmode="numeric" maxlength="6" placeholder="123456">
+        <label for="forgotNewPw">${t('forgotNewPasswordLabel')}</label>
+        <input type="password" id="forgotNewPw" value="${state.forgotNewPassword}" placeholder="${t('passwordHintSignup')}">
+        <div class="row" style="margin-top:1rem;">
+          <button class="btn-primary" id="resetBtn">${state.loading ? t('pleaseWait') : t('forgotResetBtn')}</button>
+          <button class="btn-secondary" id="resendBtn" type="button">${t('forgotResendBtn')}</button>
+        </div>
+        <p style="margin-top:1rem;"><button class="btn-text" id="backToLoginBtn" type="button">${t('forgotBackToLogin')}</button></p>
+      </div>
+    `;
+    wrap.querySelector('#forgotCode').oninput = (e) => state.forgotCode = e.target.value;
+    wrap.querySelector('#forgotNewPw').oninput = (e) => state.forgotNewPassword = e.target.value;
+    wrap.querySelector('#resetBtn').onclick = onResetPasswordSubmit;
+    wrap.querySelector('#resendBtn').onclick = onRequestResetSubmit;
+    wrap.querySelector('#backToLoginBtn').onclick = () => { state.screen = 'auth'; state.authMode = 'login'; state.error=''; render(); };
+    return wrap;
+  }
+  // step === 'request'
+  wrap.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0;">${t('forgotTitle')}</h2>
+      <p class="note">${t('forgotIntro')}</p>
+      ${state.error ? `<div class="error">${state.error}</div>` : ''}
+      <label for="forgotEmail">${t('emailLabel')}</label>
+      <input type="email" id="forgotEmail" value="${state.forgotEmail}" placeholder="owner@school.dz">
+      <div class="row" style="margin-top:1rem;">
+        <button class="btn-primary" id="sendCodeBtn">${state.loading ? t('pleaseWait') : t('forgotSendCodeBtn')}</button>
+      </div>
+      <p style="margin-top:1rem;"><button class="btn-text" id="backToLoginBtn" type="button">${t('forgotBackToLogin')}</button></p>
+    </div>
+  `;
+  wrap.querySelector('#forgotEmail').oninput = (e) => state.forgotEmail = e.target.value;
+  wrap.querySelector('#sendCodeBtn').onclick = onRequestResetSubmit;
+  wrap.querySelector('#backToLoginBtn').onclick = () => { state.screen = 'auth'; state.authMode = 'login'; state.error=''; render(); };
+  return wrap;
+}
+
+async function onRequestResetSubmit() {
+  state.error = '';
+  if (!state.forgotEmail.trim()) { state.error = t('authFillBoth'); render(); return; }
+  state.loading = true; render();
+  try {
+    await apiCall('request_password_reset', { email: state.forgotEmail.trim() });
+    state.forgotStep = 'code';
+  } catch (e) { state.error = e.message || 'Could not send reset code.'; }
+  state.loading = false; render();
+}
+
+async function onResetPasswordSubmit() {
+  state.error = '';
+  if (!state.forgotCode.trim() || !state.forgotNewPassword.trim()) { state.error = t('authFillBoth'); render(); return; }
+  state.loading = true; render();
+  try {
+    await apiCall('reset_password_with_code', { email: state.forgotEmail.trim(), code: state.forgotCode.trim(), new_password: state.forgotNewPassword });
+    state.forgotStep = 'done';
+  } catch (e) { state.error = e.message || 'Could not reset password.'; }
+  state.loading = false; render();
+}
+
+async function onAuthSubmit() {
+  state.error = '';
+  if (!state.authEmail.trim() || !state.authPassword.trim()) { state.error = t('authFillBoth'); render(); return; }
+  state.loading = true; render();
+  try {
+    const data = await apiCall(state.authMode, { email: state.authEmail.trim(), password: state.authPassword });
+    state.sessionToken = data.token; saveSession();
+    state.screen = 'app'; state.tab = 'dashboard';
+    await loadAppData();
+  } catch (e) { state.error = e.message || 'Could not log in.'; }
+  state.loading = false; render();
+}
+
+async function loadAppData() {
+  if (state.demoMode) return;
+  const [s, g, tt, r] = await Promise.all([
+    apiCall('list_students'), apiCall('list_groups'), apiCall('list_teachers'), apiCall('revenue_summary'),
+  ]);
+  state.students = s.students || []; state.groups = g.groups || []; state.teachers = tt.teachers || [];
+  state.revenue = { monthly: r.monthly || {}, annual: r.annual || {} };
+}
+
+async function loadStatistics() {
+  if (state.demoMode) {
+    state.statistics = {
+      total_students: state.students.length,
+      by_level: { '3AM': 1 },
+      groups: state.groups.map(g => ({ id: g.id, name: g.name, level: g.level, student_count: state.students.filter(s=>s.group_id===g.id).length, attendance_rate: 75, revenue: 0 })),
+      payment_breakdown: { paid: state.students.filter(s=>s.payment_status==='paid').length, pay_later: state.students.filter(s=>s.payment_status==='pay_later'&&!s.payment_overdue).length, overdue: state.students.filter(s=>s.payment_overdue).length },
+    };
+    return;
+  }
+  const data = await apiCall('statistics_summary');
+  state.statistics = data;
+}
+
+async function loadAdminData() {
+  const [a, l] = await Promise.all([apiCall('list_accounts'), apiCall('list_license_usage')]);
+  state.accounts = a.accounts || []; state.licenseUsage = l.licenses || [];
+}
+
+// ---------------- ADMIN ----------------
+function renderAdmin() {
+  const wrap = document.createElement('div');
+  wrap.className = 'wrap';
+  const accRows = state.accounts.map(a => `
+    <tr><td>${a.email}</td><td><code>${a.license_key}</code></td>
+      <td>${a.suspended ? `<span class="badge overdue">${t('statusSuspended')}</span>` : `<span class="badge paid">${t('statusActive')}</span>`}</td>
+      <td class="row" style="gap:.4rem;flex-wrap:nowrap;">
+        <button class="btn-danger" data-suspend="${a.id}" data-state="${a.suspended}">${a.suspended ? t('unsuspendBtn') : t('suspendBtn')}</button>
+        <button class="btn-danger" data-delete="${a.id}">${t('deleteAccountBtn')}</button>
+      </td>
+    </tr>`).join('');
+  const usageRows = state.licenseUsage.map(l => `
+    <tr>
+      <td><code>${l.key}</code></td>
+      <td>${l.role}</td>
+      <td>${l.devices_used} / ${l.max_devices}</td>
+      <td class="row" style="gap:.4rem;flex-wrap:nowrap;align-items:center;">
+        <button class="btn-text" data-devdec="${l.key}" ${l.max_devices <= 1 ? 'disabled' : ''} aria-label="-">−</button>
+        <span style="min-width:1.5rem;text-align:center;display:inline-block;">${l.max_devices}</span>
+        <button class="btn-text" data-devinc="${l.key}" aria-label="+">+</button>
+      </td>
+      <td><button class="btn-danger" data-dellicense="${l.key}">${t('deleteLicenseBtn')}</button></td>
+    </tr>`).join('');
+  wrap.innerHTML = `
+    <div class="toolbar"><h2>${t('fraudTitle')}</h2><button class="btn-text" id="logoutBtn" style="margin-inline-start:auto;">${t('logout')}</button></div>
+    ${state.error ? `<div class="error">${state.error}</div>` : ''}
+    <div class="card"><table><thead><tr><th>${t('colEmail')}</th><th>${t('colLicense')}</th><th>${t('colStatus')}</th><th></th></tr></thead>
+      <tbody>${accRows || `<tr><td colspan="4" class="note">${t('noAccounts')}</td></tr>`}</tbody></table></div>
+    <h3>${t('createLicenseTitle')}</h3>
+    <div class="card">
+      ${state.adminCreatedLicense ? `<div class="error" style="background:var(--good-light);color:var(--good);border-color:transparent;">${t('newLicenseCreated')} <code>${state.adminCreatedLicense.key}</code></div>` : ''}
+      <div class="row">
+        <div style="flex:1;min-width:160px;">
+          <label for="newLicenseRole">${t('licenseRoleLabel')}</label>
+          <select id="newLicenseRole">
+            <option value="user" ${state.adminNewLicenseRole==='user'?'selected':''}>${t('roleUserOption')}</option>
+            <option value="admin" ${state.adminNewLicenseRole==='admin'?'selected':''}>${t('roleAdminOption')}</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:120px;">
+          <label for="newLicenseDevices">${t('maxDevicesLabel')}</label>
+          <input type="number" id="newLicenseDevices" min="1" value="${state.adminNewLicenseDevices}">
+        </div>
+      </div>
+      <div class="row" style="margin-top:1rem;"><button class="btn-primary" id="createLicenseBtn">${t('createLicenseBtn')}</button></div>
+    </div>
+    <h3>${t('deviceUsageTitle')}</h3>
+    <div class="card"><table><thead><tr><th>${t('colLicenseKey')}</th><th>${t('colRole')}</th><th>${t('colDevicesUsed')}</th><th>${t('colMaxDevices')}</th><th></th></tr></thead>
+      <tbody>${usageRows}</tbody></table></div>
+  `;
+  wrap.querySelector('#logoutBtn').onclick = () => { state.screen='gate'; state.licenseKey=''; clearSession(); render(); };
+  wrap.querySelectorAll('[data-suspend]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute('data-suspend');
+      const isSuspended = btn.getAttribute('data-state') === 'true';
+      try { await apiCall(isSuspended ? 'unsuspend_account' : 'suspend_account', { id }); await loadAdminData(); render(); }
+      catch (e) { state.error = e.message; render(); }
+    };
+  });
+  wrap.querySelectorAll('[data-delete]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute('data-delete');
+      if (!window.confirm(t('deleteAccountConfirm'))) return;
+      try { await apiCall('delete_account', { id }); await loadAdminData(); render(); }
+      catch (e) { state.error = e.message; render(); }
+    };
+  });
+  wrap.querySelectorAll('[data-devinc]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.getAttribute('data-devinc');
+      const l = state.licenseUsage.find(x => x.key === key);
+      const newMax = (l ? l.max_devices : 1) + 1;
+      state.error = '';
+      try { await apiCall('update_license', { key, max_devices: newMax }); await loadAdminData(); render(); }
+      catch (e) { state.error = e.message; render(); }
+    };
+  });
+  wrap.querySelectorAll('[data-devdec]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.getAttribute('data-devdec');
+      const l = state.licenseUsage.find(x => x.key === key);
+      const newMax = Math.max(1, (l ? l.max_devices : 1) - 1);
+      state.error = '';
+      try { await apiCall('update_license', { key, max_devices: newMax }); await loadAdminData(); render(); }
+      catch (e) { state.error = e.message; render(); }
+    };
+  });
+  wrap.querySelectorAll('[data-dellicense]').forEach(btn => {
+    btn.onclick = async () => {
+      const key = btn.getAttribute('data-dellicense');
+      if (!window.confirm(t('deleteLicenseConfirm'))) return;
+      state.error = '';
+      try { await apiCall('delete_license', { key }); await loadAdminData(); render(); }
+      catch (e) { state.error = e.message; render(); }
+    };
+  });
+  wrap.querySelector('#newLicenseRole').onchange = (e) => state.adminNewLicenseRole = e.target.value;
+  wrap.querySelector('#newLicenseDevices').oninput = (e) => state.adminNewLicenseDevices = e.target.value;
+  wrap.querySelector('#createLicenseBtn').onclick = async () => {
+    state.error = '';
+    try {
+      const data = await apiCall('create_license', { role: state.adminNewLicenseRole, max_devices: Number(state.adminNewLicenseDevices) || 5 });
+      state.adminCreatedLicense = data.license;
+      await loadAdminData();
+      render();
+    } catch (e) { state.error = e.message; render(); }
+  };
+  return wrap;
+}
+
+// ---------------- MAIN APP ----------------
+function renderApp() {
+  const container = document.createElement('div');
+  const tabs = document.createElement('div');
+  tabs.className = 'tabs';
+  const tabDefs = [['dashboard','tabDashboard'],['students','tabStudents'],['groups','tabGroups'],['teachers','tabTeachers'],['calculator','tabCalculator'],['attendance','tabAttendance'],['statistics','tabStatistics'],['settings','tabSettings']];
+  tabs.innerHTML = tabDefs.map(([k,label]) => `<div class="tab ${state.tab===k?'active':''}" data-tab="${k}">${t(label)}</div>`).join('');
+  tabs.querySelectorAll('[data-tab]').forEach(el => {
+    el.onclick = () => {
+      state.tab = el.getAttribute('data-tab');
+      if (state.tab === 'statistics') { loadStatistics().then(render).catch(e => { state.error = e.message; render(); }); }
+      render();
+    };
+  });
+  container.appendChild(tabs);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'wrap';
+  const topRow = document.createElement('div');
+  topRow.className = 'row'; topRow.style.justifyContent = 'flex-end';
+  topRow.innerHTML = `<button class="btn-text" id="logoutBtn">${t('logout')}</button>`;
+  wrap.appendChild(topRow);
+
+  if (state.error) { const err = document.createElement('div'); err.className='error'; err.textContent = state.error; wrap.appendChild(err); }
+
+  if (state.tab === 'dashboard') wrap.appendChild(renderDashboard());
+  else if (state.tab === 'students') wrap.appendChild(renderStudents());
+  else if (state.tab === 'groups') wrap.appendChild(renderGroups());
+  else if (state.tab === 'teachers') wrap.appendChild(renderTeachers());
+  else if (state.tab === 'calculator') wrap.appendChild(renderCalculator());
+  else if (state.tab === 'attendance') wrap.appendChild(renderAttendance());
+  else if (state.tab === 'statistics') wrap.appendChild(renderStatistics());
+  else if (state.tab === 'settings') wrap.appendChild(renderSettings());
+
+  container.appendChild(wrap);
+  wrap.querySelector('#logoutBtn').onclick = async () => {
+    try { if (!state.demoMode) await apiCall('logout'); } catch {}
+    state.screen = 'auth'; state.sessionToken=''; state.authPassword=''; clearSession(); render();
+  };
+  if (state.editingStudent) container.appendChild(renderEditModal());
+  if (state.renewingStudent) container.appendChild(renderRenewModal());
+  return container;
+}
+
+function renderRenewModal() {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  const s = state.renewingStudent;
+  backdrop.innerHTML = `
+    <div class="modal">
+      <h3 style="margin-top:0;">${t('renewModalTitle')}</h3>
+      ${state.error ? `<div class="error">${state.error}</div>` : ''}
+      <p class="note" style="margin-top:0;">${s.full_name}</p>
+      <label>${t('renewAmountLabel')}</label>
+      <input id="renewAmount" type="number" min="0" value="0">
+      <p class="note">${t('renewAmountHint')}</p>
+      <div class="row" style="margin-top:1rem;">
+        <button class="btn-primary" id="confirmRenewBtn">${t('renewBtn')}</button>
+        <button class="btn-secondary" id="cancelRenewBtn" type="button">${t('cancelBtn')}</button>
+      </div>
+    </div>
+  `;
+  backdrop.querySelector('#cancelRenewBtn').onclick = () => { state.renewingStudent = null; state.error=''; render(); };
+  backdrop.querySelector('#confirmRenewBtn').onclick = async () => {
+    const amount = Number(backdrop.querySelector('#renewAmount').value || 0);
+    try {
+      if (state.demoMode) {
+        const idx = state.students.findIndex(x => x.id === s.id);
+        if (idx >= 0) state.students[idx] = { ...state.students[idx], payment_status: 'paid', sessions_count: 0, cycle_number: state.students[idx].cycle_number + 1, payment_overdue: false, next_payment_due: null };
+      } else {
+        await apiCall('renew_subscription', { student_id: s.id, amount });
+        await loadAppData();
+      }
+      state.renewingStudent = null; state.error = ''; render();
+    } catch (e) { state.error = e.message; render(); }
+  };
+  return backdrop;
+}
+
+// ---- Dashboard ----
+function renderDashboard() {
+  const el = document.createElement('div');
+  const overdue = state.students.filter(s => s.payment_overdue);
+  const payLater = state.students.filter(s => s.payment_status === 'pay_later');
+  const months = Object.keys(state.revenue.monthly).sort().slice(-12);
+  const maxM = Math.max(1, ...months.map(m => state.revenue.monthly[m]));
+  const years = Object.keys(state.revenue.annual).sort();
+  const maxY = Math.max(1, ...years.map(y => state.revenue.annual[y]));
+
+  const now = new Date();
+  const curMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const curYearKey = String(now.getFullYear());
+  const revenueThisMonth = state.revenue.monthly[curMonthKey] || 0;
+  const revenueThisYear = state.revenue.annual[curYearKey] || 0;
+  const revenueTotal = Object.values(state.revenue.annual).reduce((a, b) => a + b, 0);
+
+  el.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi accent"><div class="num">${revenueThisMonth.toLocaleString()} DA</div><div class="lbl">${t('kpiRevenueMonth')}</div></div>
+      <div class="kpi"><div class="num">${revenueThisYear.toLocaleString()} DA</div><div class="lbl">${t('kpiRevenueYear')}</div></div>
+      <div class="kpi"><div class="num">${revenueTotal.toLocaleString()} DA</div><div class="lbl">${t('kpiRevenueTotal')}</div></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi"><div class="num">${state.students.length}</div><div class="lbl">${t('kpiStudents')}</div></div>
+      <div class="kpi"><div class="num">${state.groups.length}</div><div class="lbl">${t('kpiGroups')}</div></div>
+      <div class="kpi"><div class="num">${state.teachers.length}</div><div class="lbl">${t('kpiTeachers')}</div></div>
+      <div class="kpi"><div class="num">${overdue.length}</div><div class="lbl">${t('kpiOverdue')}</div></div>
+    </div>
+    <div class="card"><h3 style="margin-top:0;">${t('revenueMonthly')}</h3>
+      ${months.length ? months.map(m => `<div class="bar-row"><div class="bar-label">${m}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(state.revenue.monthly[m]/maxM*100).toFixed(0)}%"></div></div>
+          <div class="bar-val">${state.revenue.monthly[m].toLocaleString()} DA</div></div>`).join('') : `<p class="note">${t('noPayments')}</p>`}
+    </div>
+    <div class="card"><h3 style="margin-top:0;">${t('revenueAnnual')}</h3>
+      ${years.length ? years.map(y => `<div class="bar-row"><div class="bar-label">${y}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(state.revenue.annual[y]/maxY*100).toFixed(0)}%"></div></div>
+          <div class="bar-val">${state.revenue.annual[y].toLocaleString()} DA</div></div>`).join('') : `<p class="note">${t('noPayments')}</p>`}
+    </div>
+    <div class="card"><h3 style="margin-top:0;">${t('paymentRemindersTitle')}</h3>
+      ${payLater.length ? payLater.map(s => `
+        <div class="student-row"><div class="student-info"><div class="name">${s.full_name}</div>
+            <div class="meta">${t('cycleDue', { n: s.cycle_number, date: s.next_payment_due || '—' })}
+              ${s.payment_overdue ? `<span class="badge overdue">${t('overdueNotify')}</span>` : `<span class="badge pay_later">${t('pending')}</span>`}
+            </div></div>
+          <div class="row">
+            <button class="btn-secondary" data-pay="${s.id}">${t('markPaid')}</button>
+            <button class="btn-secondary" data-renew="${s.id}">${t('renewBtn')}</button>
+          </div></div>
+      `).join('') : `<p class="note">${t('allPaidUp')}</p>`}
+    </div>
+  `;
+  el.querySelectorAll('[data-pay]').forEach(btn => {
+    btn.onclick = async () => {
+      try { await apiCall('mark_payment', { student_id: btn.getAttribute('data-pay') }); await loadAppData(); render(); }
+      catch (e) { state.error = e.message; render(); }
+    };
+  });
+  el.querySelectorAll('[data-renew]').forEach(btn => {
+    btn.onclick = () => {
+      state.renewingStudent = state.students.find(s => s.id === btn.getAttribute('data-renew'));
+      render();
+    };
+  });
+  return el;
+}
+
+// ---- Students ----
+function levelLabel(g) { return g ? `${g.name} (${g.level})` : t('dashLabel'); }
+
+function renderStudents() {
+  const el = document.createElement('div');
+  const groupOptions = state.groups.map(g => `<option value="${g.id}">${g.name} — ${g.level}</option>`).join('');
+
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('studentsTitle')}</h2><span class="count">${t('onFile', { n: state.students.length })}</span></div>
+    <div class="card">
+      <h3 style="margin-top:0;">${t('addStudentTitle')}</h3>
+      <label for="fullName">${t('fullNameLabel')}</label><input id="fullName">
+      <label for="phone">${t('phoneLabel')}</label><input id="phone" placeholder="+213 ...">
+      <label for="groupSel">${t('groupLabel')}</label>
+      <select id="groupSel"><option value="">${t('noneOption')}</option>${groupOptions}</select>
+      <label for="inscriptionAmount">${t('inscriptionAmountLabel')}</label>
+      <input id="inscriptionAmount" type="number" min="0" value="0">
+      <p class="note" style="margin-top:.2rem;">${t('inscriptionAmountHint')}</p>
+      <label>${t('photoLabel')}</label>
+      <div class="row"><button class="btn-secondary" type="button" id="camBtn">${t('useCameraBtn')}</button><input type="file" id="fileInput" accept="image/*"></div>
+      <div id="cameraArea"></div>
+      <div id="previewArea" style="margin-top:.5rem;"></div>
+      <div class="row" style="margin-top:.8rem;"><button class="btn-primary" id="addBtn">${t('addStudentBtn')}</button></div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0;">${t('importExportTitle')}</h3>
+      <div class="row" style="margin-top:.6rem;">
+        <button class="btn-secondary" id="exportPdfBtn" type="button">${t('exportPdfBtn')}</button>
+        <button class="btn-secondary" id="exportWordBtn" type="button">${t('exportWordBtn')}</button>
+        <input type="file" id="importCsv" accept=".csv" style="width:auto;display:inline;">
+      </div>
+      <p class="note">${t('importNote')}</p>
+    </div>
+    <div class="card" id="studentList"></div>
+  `;
+
+  const listEl = el.querySelector('#studentList');
+  if (!state.students.length) {
+    listEl.innerHTML = `<p class="note">${t('noStudents')}</p>`;
+  } else {
+    state.students.forEach(s => {
+      const group = state.groups.find(g => g.id === s.group_id);
+      const row = document.createElement('div');
+      row.className = 'student-row';
+      const badgeClass = s.payment_overdue ? 'overdue' : s.payment_status;
+      const badgeText = s.payment_overdue ? t('badgeOverdue') : (s.payment_status === 'paid' ? t('badgePaid') : t('badgePayLater'));
+      row.innerHTML = `
+        <div class="avatar-placeholder" data-avatar="${s.id}"></div>
+        <div class="student-info"><div class="name">${s.full_name}</div>
+          <div class="meta">${s.phone_number || ''} · ${levelLabel(group)} · <span class="badge ${badgeClass}">${badgeText}</span></div></div>
+        <div class="row"><div id="qr-${s.id}" title="QR"></div>
+          <button class="btn-secondary" data-edit="${s.id}">${t('editBtn')}</button>
+          <button class="btn-secondary" data-renew="${s.id}">${t('renewBtn')}</button>
+          <button class="btn-danger" data-del="${s.id}">${t('deleteBtn')}</button></div>
+      `;
+      listEl.appendChild(row);
+      setTimeout(() => { const h = document.getElementById(`qr-${s.id}`); if (h && window.QRCode) { h.innerHTML=''; new QRCode(h, { text: s.qr_value, width: 42, height: 42 }); } }, 0);
+      if (!state.demoMode && s.photo_path) {
+        apiCall('get_photo_url', { photo_path: s.photo_path }).then(d => {
+          const ph = row.querySelector(`[data-avatar="${s.id}"]`);
+          if (d.url && ph) { const img = document.createElement('img'); img.src = d.url; img.className='avatar'; ph.replaceWith(img); }
+        }).catch(()=>{});
+      }
+    });
+  }
+  listEl.querySelectorAll('[data-del]').forEach(btn => {
+    btn.onclick = async () => {
+      const id = btn.getAttribute('data-del');
+      try {
+        if (state.demoMode) state.students = state.students.filter(s => s.id !== id);
+        else { await apiCall('delete_student', { id }); await loadAppData(); }
+        render();
+      } catch (e) { state.error = e.message; render(); }
+    };
+  });
+  listEl.querySelectorAll('[data-edit]').forEach(btn => {
+    btn.onclick = () => {
+      const s = state.students.find(x => x.id === btn.getAttribute('data-edit'));
+      state.editingStudent = { ...s, _newPhoto: null };
+      render();
+    };
+  });
+  listEl.querySelectorAll('[data-renew]').forEach(btn => {
+    btn.onclick = () => {
+      state.renewingStudent = state.students.find(x => x.id === btn.getAttribute('data-renew'));
+      render();
+    };
+  });
+
+  const cameraArea = el.querySelector('#cameraArea');
+  function updatePreview() {
+    const pv = el.querySelector('#previewArea');
+    pv.innerHTML = state.capturedPhoto ? `<img src="${state.capturedPhoto.previewUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">` : '';
+  }
+  el.querySelector('#fileInput').onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { state.capturedPhoto = { base64: reader.result, previewUrl: reader.result }; updatePreview(); };
+    reader.readAsDataURL(file);
+  };
+  el.querySelector('#camBtn').onclick = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      state.stream = stream;
+      const video = document.createElement('video');
+      video.autoplay = true; video.playsInline = true; video.style.width='100%'; video.style.maxWidth='320px'; video.style.borderRadius='8px';
+      video.srcObject = stream;
+      const shot = document.createElement('button');
+      shot.className = 'btn-primary'; shot.type='button'; shot.textContent=t('captureBtn'); shot.style.marginTop='.6rem';
+      shot.onclick = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        state.capturedPhoto = { base64: dataUrl, previewUrl: dataUrl };
+        updatePreview(); stopCamera(cameraArea);
+      };
+      cameraArea.innerHTML = ''; cameraArea.appendChild(video); cameraArea.appendChild(shot);
+    } catch { state.error = t('cameraError'); render(); }
+  };
+
+  el.querySelector('#addBtn').onclick = async () => {
+    const fullName = el.querySelector('#fullName').value.trim();
+    const phone = el.querySelector('#phone').value.trim();
+    const groupId = el.querySelector('#groupSel').value || null;
+    const inscriptionAmount = Number(el.querySelector('#inscriptionAmount').value || 0);
+    if (!fullName || !phone) { state.error = t('fullNamePhoneRequired'); render(); return; }
+    try {
+      if (state.demoMode) {
+        state.students.unshift({ id: 'demo-'+Date.now(), full_name: fullName, phone_number: phone, photo_path: null, qr_value: 'demo-'+Date.now(), payment_status: inscriptionAmount>0?'paid':'pay_later', group_id: groupId, cycle_number:1, sessions_count:0 });
+      } else {
+        const data = await apiCall('add_student', { full_name: fullName, phone_number: phone, photo_base64: state.capturedPhoto ? state.capturedPhoto.base64 : null, group_id: groupId, inscription_amount: inscriptionAmount });
+        state.students.unshift(data.student);
+      }
+      state.capturedPhoto = null; state.error = ''; render();
+    } catch (e) { state.error = e.message; render(); }
+  };
+
+  el.querySelector('#exportPdfBtn').onclick = () => exportStudentsPdf();
+  el.querySelector('#exportWordBtn').onclick = () => exportStudentsWord();
+  el.querySelector('#importCsv').onchange = (e) => importStudentsCsv(e.target.files[0]);
+
+  updatePreview();
+  return el;
+}
+
+function renderEditModal() {
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  const s = state.editingStudent;
+  const groupOptions = state.groups.map(g => `<option value="${g.id}" ${g.id===s.group_id?'selected':''}>${g.name} — ${g.level}</option>`).join('');
+  backdrop.innerHTML = `
+    <div class="modal">
+      <h3 style="margin-top:0;">${t('editStudentTitle')}</h3>
+      ${state.error ? `<div class="error">${state.error}</div>` : ''}
+      <label>${t('fullNameLabel')}</label><input id="editName" value="${s.full_name}">
+      <label>${t('phoneLabel')}</label><input id="editPhone" value="${s.phone_number || ''}">
+      <label>${t('groupLabel')}</label><select id="editGroup"><option value="">${t('noneOption')}</option>${groupOptions}</select>
+      <label>${t('photoLabel')}</label><input type="file" id="editPhoto" accept="image/*">
+      <div id="editPreview" style="margin-top:.5rem;"></div>
+      <div class="row" style="margin-top:1rem;">
+        <button class="btn-primary" id="saveEditBtn">${t('saveBtn')}</button>
+        <button class="btn-secondary" id="cancelEditBtn" type="button">${t('cancelBtn')}</button>
+      </div>
+    </div>
+  `;
+  backdrop.querySelector('#editPhoto').onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      state.editingStudent._newPhoto = reader.result;
+      backdrop.querySelector('#editPreview').innerHTML = `<img src="${reader.result}" style="width:70px;height:70px;object-fit:cover;border-radius:8px;">`;
+    };
+    reader.readAsDataURL(file);
+  };
+  backdrop.querySelector('#cancelEditBtn').onclick = () => { state.editingStudent = null; state.error=''; render(); };
+  backdrop.querySelector('#saveEditBtn').onclick = async () => {
+    const full_name = backdrop.querySelector('#editName').value.trim();
+    const phone_number = backdrop.querySelector('#editPhone').value.trim();
+    const group_id = backdrop.querySelector('#editGroup').value || null;
+    if (!full_name || !phone_number) { state.error = t('fullNamePhoneRequired'); render(); return; }
+    try {
+      if (state.demoMode) {
+        const idx = state.students.findIndex(x => x.id === s.id);
+        if (idx >= 0) state.students[idx] = { ...state.students[idx], full_name, phone_number, group_id };
+      } else {
+        await apiCall('edit_student', { id: s.id, full_name, phone_number, group_id, photo_base64: state.editingStudent._newPhoto });
+        await loadAppData();
+      }
+      state.editingStudent = null; state.error = ''; render();
+    } catch (e) { state.error = e.message; render(); }
+  };
+  return backdrop;
+}
+
+function stopCamera(container) {
+  if (state.stream) { state.stream.getTracks().forEach(tr => tr.stop()); state.stream = null; }
+  container.innerHTML = '';
+}
+
+async function exportStudentsPdf() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14); doc.text('Student list', 14, 16);
+  let y = 26;
+  for (const s of state.students) {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.setFontSize(11);
+    doc.text(`${s.full_name}  —  ${s.phone_number || ''}`, 14, y);
+    const qrCanvasHost = document.createElement('div');
+    if (window.QRCode) {
+      new QRCode(qrCanvasHost, { text: s.qr_value, width: 60, height: 60 });
+      await new Promise(r => setTimeout(r, 30));
+      const img = qrCanvasHost.querySelector('img') || qrCanvasHost.querySelector('canvas');
+      try {
+        const dataUrl = img.tagName === 'CANVAS' ? img.toDataURL('image/png') : img.src;
+        doc.addImage(dataUrl, 'PNG', 150, y - 10, 20, 20);
+      } catch {}
+    }
+    y += 26;
+  }
+  doc.save('students.pdf');
+}
+
+function exportStudentsWord() {
+  const rows = state.students.map(s => `<tr><td>${s.full_name}</td><td>${s.phone_number||''}</td><td>${s.qr_value}</td></tr>`).join('');
+  const html = `<html><head><meta charset="utf-8"></head><body><h2>Student list</h2>
+    <table border="1" cellpadding="4" cellspacing="0"><tr><th>Name</th><th>Phone</th><th>QR value</th></tr>${rows}</table></body></html>`;
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'students.doc'; link.click();
+}
+
+function importStudentsCsv(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const lines = String(reader.result).split(/\r?\n/).filter(Boolean);
+    const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const idxName = header.indexOf('full_name'); const idxPhone = header.indexOf('phone_number'); const idxGroup = header.indexOf('group_name');
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(',');
+      const full_name = cols[idxName]?.trim(); const phone_number = cols[idxPhone]?.trim();
+      const groupName = idxGroup >= 0 ? cols[idxGroup]?.trim() : '';
+      if (!full_name) continue;
+      const group = state.groups.find(g => g.name === groupName);
+      try { if (!state.demoMode) await apiCall('add_student', { full_name, phone_number, group_id: group ? group.id : null }); } catch {}
+    }
+    if (!state.demoMode) await loadAppData();
+    render();
+  };
+  reader.readAsText(file);
+}
+
+// ---- Groups ----
+function renderGroups() {
+  const el = document.createElement('div');
+  const teacherOptions = state.teachers.map(t2 => `<option value="${t2.id}">${t2.full_name}</option>`).join('');
+  const levelOptions = VALID_LEVELS.map(l => `<option value="${l}">${l}</option>`).join('');
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('groupsTitle')}</h2><span class="count">${t('groupsCount', { n: state.groups.length })}</span></div>
+    <div class="card">
+      <h3 style="margin-top:0;">${t('addGroupTitle')}</h3>
+      <label for="gName">${t('groupNameLabel')}</label><input id="gName">
+      <label for="gLevel">${t('levelLabel')}</label><select id="gLevel">${levelOptions}</select>
+      <label for="gTeacher">${t('teacherLabel')}</label><select id="gTeacher"><option value="">${t('noneOption')}</option>${teacherOptions}</select>
+      <label for="gPrice">${t('priceLabel')}</label><input id="gPrice" type="number" min="0" value="0">
+      <div class="row" style="margin-top:.8rem;"><button class="btn-primary" id="addGroupBtn">${t('addGroupBtn')}</button></div>
+    </div>
+    <div class="card" id="groupList"></div>
+  `;
+  const listEl = el.querySelector('#groupList');
+  listEl.innerHTML = state.groups.length ? state.groups.map(g => {
+    const t2 = state.teachers.find(x => x.id === g.teacher_id);
+    return `<div class="student-row"><div class="student-info"><div class="name">${g.name} (${g.level})</div>
+      <div class="meta">${t('teacherLabel')}: ${t2 ? t2.full_name : t('dashLabel')} · ${Number(g.price_per_cycle).toLocaleString()} DA</div></div>
+      <button class="btn-danger" data-delg="${g.id}">${t('deleteBtn')}</button></div>`;
+  }).join('') : `<p class="note">${t('noGroups')}</p>`;
+  listEl.querySelectorAll('[data-delg]').forEach(btn => {
+    btn.onclick = async () => { try { await apiCall('delete_group', { id: btn.getAttribute('data-delg') }); await loadAppData(); render(); } catch (e) { state.error = e.message; render(); } };
+  });
+  el.querySelector('#addGroupBtn').onclick = async () => {
+    const name = el.querySelector('#gName').value.trim();
+    const level = el.querySelector('#gLevel').value;
+    const teacher_id = el.querySelector('#gTeacher').value || null;
+    const price_per_cycle = Number(el.querySelector('#gPrice').value || 0);
+    if (!name) { state.error = t('groupNameRequired'); render(); return; }
+    try { await apiCall('add_group', { name, level, teacher_id, price_per_cycle }); await loadAppData(); render(); }
+    catch (e) { state.error = e.message; render(); }
+  };
+  return el;
+}
+
+// ---- Teachers ----
+function renderTeachers() {
+  const el = document.createElement('div');
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('teachersTitle')}</h2><span class="count">${t('teachersCount', { n: state.teachers.length })}</span></div>
+    <div class="card"><label for="tName">${t('teacherNameLabel')}</label><input id="tName">
+      <div class="row" style="margin-top:.8rem;"><button class="btn-primary" id="addTeacherBtn">${t('addTeacherBtn')}</button></div></div>
+    <div class="card" id="teacherList"></div>
+  `;
+  const listEl = el.querySelector('#teacherList');
+  listEl.innerHTML = state.teachers.length ? state.teachers.map(t2 =>
+    `<div class="student-row"><div class="student-info"><div class="name">${t2.full_name}</div></div>
+     <button class="btn-danger" data-delt="${t2.id}">${t('deleteBtn')}</button></div>`).join('') : `<p class="note">${t('noTeachers')}</p>`;
+  listEl.querySelectorAll('[data-delt]').forEach(btn => {
+    btn.onclick = async () => { try { await apiCall('delete_teacher', { id: btn.getAttribute('data-delt') }); await loadAppData(); render(); } catch (e) { state.error = e.message; render(); } };
+  });
+  el.querySelector('#addTeacherBtn').onclick = async () => {
+    const full_name = el.querySelector('#tName').value.trim();
+    if (!full_name) { state.error = t('teacherNameRequired'); render(); return; }
+    try { await apiCall('add_teacher', { full_name }); await loadAppData(); render(); } catch (e) { state.error = e.message; render(); }
+  };
+  return el;
+}
+
+// ---- Payment calculator ----
+function renderCalculator() {
+  const el = document.createElement('div');
+  const groups = state.groups;
+
+  function groupRevenue(g) {
+    const count = state.students.filter(s => s.group_id === g.id).length;
+    return { count, revenue: count * Number(g.price_per_cycle || 0) };
+  }
+  function groupRowHtml(g) {
+    const teacher = state.teachers.find(x => x.id === g.teacher_id);
+    const { count, revenue } = groupRevenue(g);
+    const pct = state.calcPercents[g.id] ?? 50;
+    return `<tr data-grow="${g.id}">
+      <td>${g.name} (${g.level})</td>
+      <td>${teacher ? teacher.full_name : t('dashLabel')}</td>
+      <td>${count}</td>
+      <td data-rev>${revenue.toLocaleString()} DA</td>
+      <td><input type="number" min="0" max="100" data-pct="${g.id}" value="${pct}" style="width:70px;padding:.4rem .5rem;"></td>
+      <td data-teacherpay>${Math.round(revenue * pct / 100).toLocaleString()} DA</td>
+      <td data-schoolpay>${Math.round(revenue - revenue * pct / 100).toLocaleString()} DA</td>
+    </tr>`;
+  }
+
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('calcTitle')}</h2></div>
+    <p class="note" style="margin-top:-.4rem;">${t('calcIntro')}</p>
+
+    <div class="card">
+      <h3 style="margin-top:0;">${t('calcQuickTitle')}</h3>
+      <label for="calcAmount">${t('calcAmountLabel')}</label>
+      <input id="calcAmount" type="number" min="0" value="${state.calcQuickAmount || ''}">
+      <label for="calcPercent">${t('calcPercentLabel')}</label>
+      <input id="calcPercent" type="number" min="0" max="100" value="${state.calcQuickPercent}">
+      <div class="kpi-grid" style="margin-top:1rem;">
+        <div class="kpi accent"><div class="num" id="calcQuickTeacherOut">0 DA</div><div class="lbl">${t('calcTeacherAmount')}</div></div>
+        <div class="kpi"><div class="num" id="calcQuickSchoolOut">0 DA</div><div class="lbl">${t('calcSchoolAmount')}</div></div>
+      </div>
+      <p class="note" style="margin-top:.6rem;">💾 ${t('calcSavedNote')}</p>
+    </div>
+
+    <div class="card">
+      <div class="toolbar" style="margin-bottom:.4rem;"><h3 style="margin:0;">${t('calcPerGroupTitle')}</h3></div>
+      <p class="note" style="margin-top:0;">${t('calcPerGroupHint')}</p>
+      <div style="overflow-x:auto;">
+      <table id="calcGroupTable">
+        <thead><tr>
+          <th>${t('colGroup')}</th><th>${t('teacherLabel')}</th><th>${t('colStudentCount')}</th>
+          <th>${t('colRevenue')}</th><th>${t('colTeacherPercent')}</th><th>${t('colTeacherPayment')}</th><th>${t('colSchoolPayment')}</th>
+        </tr></thead>
+        <tbody>${groups.length ? groups.map(groupRowHtml).join('') : `<tr><td colspan="7" class="note">${t('noGroups')}</td></tr>`}</tbody>
+        ${groups.length ? `<tfoot><tr style="font-weight:700;">
+          <td colspan="3">${t('calcTotalsRow')}</td>
+          <td id="calcTotalRevenue">0 DA</td><td></td><td id="calcTotalTeacher">0 DA</td><td id="calcTotalSchool">0 DA</td>
+        </tr></tfoot>` : ''}
+      </table>
+      </div>
+    </div>
+
+    <div class="card" id="calcByTeacherCard">
+      <h3 style="margin-top:0;">${t('calcByTeacherTitle')}</h3>
+      <div id="calcByTeacherList"></div>
+    </div>
+  `;
+
+  function recomputeQuick() {
+    const amount = Number(el.querySelector('#calcAmount').value || 0);
+    const pct = Math.min(100, Math.max(0, Number(el.querySelector('#calcPercent').value || 0)));
+    const teacherAmt = Math.round(amount * pct / 100);
+    const schoolAmt = amount - teacherAmt;
+    el.querySelector('#calcQuickTeacherOut').textContent = teacherAmt.toLocaleString() + ' DA';
+    el.querySelector('#calcQuickSchoolOut').textContent = schoolAmt.toLocaleString() + ' DA';
+    state.calcQuickAmount = amount; state.calcQuickPercent = pct;
+    saveCalcQuick();
+  }
+
+  function currentPct(g) {
+    const input = el.querySelector(`[data-pct="${g.id}"]`);
+    if (!input) return state.calcPercents[g.id] ?? 50;
+    return Math.min(100, Math.max(0, Number(input.value || 0)));
+  }
+
+  function recomputeByTeacher() {
+    const totals = {};
+    let totalRevenue = 0, totalTeacher = 0, totalSchool = 0;
+    groups.forEach(g => {
+      const pct = currentPct(g);
+      const { revenue } = groupRevenue(g);
+      const teacherAmt = revenue * pct / 100;
+      totalRevenue += revenue; totalTeacher += teacherAmt; totalSchool += (revenue - teacherAmt);
+      const key = g.teacher_id || '__none__';
+      if (!totals[key]) {
+        const teacher = state.teachers.find(x => x.id === g.teacher_id);
+        totals[key] = { name: teacher ? teacher.full_name : t('calcNoTeacher'), groups: 0, teacherTotal: 0, schoolTotal: 0 };
+      }
+      totals[key].groups += 1;
+      totals[key].teacherTotal += teacherAmt;
+      totals[key].schoolTotal += (revenue - teacherAmt);
+    });
+
+    const listEl = el.querySelector('#calcByTeacherList');
+    const entries = Object.values(totals);
+    listEl.innerHTML = entries.length ? entries.map(e => `
+      <div class="student-row"><div class="student-info"><div class="name">${e.name}</div>
+        <div class="meta">${t('calcGroupsCol')}: ${e.groups}</div></div>
+      <div style="text-align:end;">
+        <div style="font-weight:700;color:var(--moss-dark);">${Math.round(e.teacherTotal).toLocaleString()} DA</div>
+        <div class="note" style="margin:0;">${t('colSchoolPayment')}: ${Math.round(e.schoolTotal).toLocaleString()} DA</div>
+      </div></div>
+    `).join('') : `<p class="note">${t('noGroups')}</p>`;
+
+    const trEl = el.querySelector('#calcTotalRevenue'), ttEl = el.querySelector('#calcTotalTeacher'), tsEl = el.querySelector('#calcTotalSchool');
+    if (trEl) trEl.textContent = Math.round(totalRevenue).toLocaleString() + ' DA';
+    if (ttEl) ttEl.textContent = Math.round(totalTeacher).toLocaleString() + ' DA';
+    if (tsEl) tsEl.textContent = Math.round(totalSchool).toLocaleString() + ' DA';
+  }
+
+  el.querySelector('#calcAmount').oninput = recomputeQuick;
+  el.querySelector('#calcPercent').oninput = recomputeQuick;
+  recomputeQuick();
+
+  el.querySelectorAll('[data-pct]').forEach(input => {
+    input.oninput = () => {
+      const gid = input.getAttribute('data-pct');
+      const g = groups.find(x => x.id === gid);
+      const pct = currentPct(g);
+      const { revenue } = groupRevenue(g);
+      const row = el.querySelector(`tr[data-grow="${gid}"]`);
+      row.querySelector('[data-teacherpay]').textContent = Math.round(revenue * pct / 100).toLocaleString() + ' DA';
+      row.querySelector('[data-schoolpay]').textContent = Math.round(revenue - revenue * pct / 100).toLocaleString() + ' DA';
+      recomputeByTeacher();
+    };
+    input.onchange = () => {
+      const gid = input.getAttribute('data-pct');
+      const g = groups.find(x => x.id === gid);
+      state.calcPercents[gid] = currentPct(g);
+      saveCalcPercents();
+    };
+  });
+
+  recomputeByTeacher();
+  return el;
+}
+
+// ---- Attendance ----
+function renderAttendance() {
+  const el = document.createElement('div');
+  const groupOptions = state.groups.map(g => `<option value="${g.id}" ${state.attendanceGroupId===g.id?'selected':''}>${g.name} (${g.level})</option>`).join('');
+  const groupStudents = state.attendanceGroupId ? state.students.filter(s => s.group_id === state.attendanceGroupId) : [];
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('attendanceTitle')}</h2></div>
+    <div class="card">
+      <div class="row">
+        <div style="flex:1;"><label for="attGroup">${t('groupLabel')}</label><select id="attGroup"><option value="">${t('selectGroupOption')}</option>${groupOptions}</select></div>
+        <div style="flex:1;"><label for="attDate">${t('dateLabel')}</label><input type="date" id="attDate" value="${state.attendanceDate}"></div>
+      </div>
+      <div class="row" style="margin-top:.8rem;">
+        <button class="btn-secondary" id="scanBtn" type="button">${state.scanning ? t('stopScanBtn') : t('scanBtn')}</button>
+        ${groupStudents.length ? `
+          <button class="btn-secondary" id="markAllBtn" type="button">${t('markAllPresentBtn')}</button>
+          <button class="btn-secondary" id="clearAllBtn" type="button">${t('clearAllBtn')}</button>
+        ` : ''}
+      </div>
+      <div id="scanArea" style="margin-top:.6rem;"></div>
+      ${state.scanMsg ? `<p class="note">${state.scanMsg}</p>` : ''}
+      <p class="note">${t('sqNote')}</p>
+      <div class="sq-grid" id="sqGrid"></div>
+      ${groupStudents.length ? `<p class="note" id="attSummary" style="margin-top:.8rem;font-weight:600;"></p>` : ''}
+    </div>
+  `;
+  el.querySelector('#attGroup').onchange = (e) => { state.attendanceGroupId = e.target.value; render(); };
+  el.querySelector('#attDate').onchange = (e) => { state.attendanceDate = e.target.value; render(); };
+
+  const grid = el.querySelector('#sqGrid');
+  grid.innerHTML = groupStudents.length ? '' : `<p class="note">${t('pickGroupNote')}</p>`;
+
+  function applyBox(box, status) {
+    box.className = 'box' + (status ? ' ' + status : '');
+    box.textContent = status === 'present' ? '✓' : status === 'absent' ? '✕' : '';
+  }
+
+  function updateSummary() {
+    const summaryEl = el.querySelector('#attSummary');
+    if (!summaryEl) return;
+    let present = 0, absent = 0;
+    groupStudents.forEach(s => {
+      const mark = getAttendanceMark(s.id, state.attendanceDate);
+      if (mark === 'present') present++; else if (mark === 'absent') absent++;
+    });
+    summaryEl.textContent = t('attSummary', { present, absent, total: groupStudents.length });
+  }
+
+  async function setMark(s, box, next) {
+    applyBox(box, next);
+    setAttendanceMark(s.id, state.attendanceDate, next);
+    updateSummary();
+    if (!state.demoMode && next) {
+      try {
+        await apiCall('mark_attendance', { student_id: s.id, session_date: state.attendanceDate, status: next, method: 'manual' });
+        // Refresh student/session data in the background (payment status, cycle counts)
+        // without re-rendering, so the squares just marked don't get reset visually.
+        loadAppData().catch(() => {});
+      }
+      catch (e) { state.error = e.message; render(); }
+    }
+  }
+
+  groupStudents.forEach(s => {
+    const sq = document.createElement('div');
+    sq.className = 'sq';
+    const savedMark = getAttendanceMark(s.id, state.attendanceDate);
+    sq.innerHTML = `<div class="box${savedMark ? ' ' + savedMark : ''}" data-student="${s.id}">${savedMark === 'present' ? '✓' : savedMark === 'absent' ? '✕' : ''}</div>${s.full_name.split(' ')[0]}`;
+    sq.querySelector('.box').onclick = () => {
+      const box = sq.querySelector('.box');
+      const current = box.classList.contains('present') ? 'present' : box.classList.contains('absent') ? 'absent' : null;
+      const next = current === null ? 'present' : current === 'present' ? 'absent' : null;
+      setMark(s, box, next);
+    };
+    grid.appendChild(sq);
+  });
+  updateSummary();
+
+  const markAllBtn = el.querySelector('#markAllBtn');
+  if (markAllBtn) markAllBtn.onclick = () => {
+    grid.querySelectorAll('.sq').forEach(sq => {
+      const studentId = sq.querySelector('.box').getAttribute('data-student');
+      const s = groupStudents.find(x => x.id === studentId);
+      setMark(s, sq.querySelector('.box'), 'present');
+    });
+  };
+  const clearAllBtn = el.querySelector('#clearAllBtn');
+  if (clearAllBtn) clearAllBtn.onclick = () => {
+    grid.querySelectorAll('.sq').forEach(sq => {
+      const studentId = sq.querySelector('.box').getAttribute('data-student');
+      const s = groupStudents.find(x => x.id === studentId);
+      setMark(s, sq.querySelector('.box'), null);
+    });
+  };
+
+  el.querySelector('#scanBtn').onclick = () => toggleScanning(el);
+  return el;
+}
+
+async function toggleScanning(el) {
+  const scanArea = el.querySelector('#scanArea');
+  if (state.scanning) {
+    if (state.scanStream) state.scanStream.getTracks().forEach(tr => tr.stop());
+    state.scanning = false; scanArea.innerHTML = ''; render(); return;
+  }
+  state.scanning = true; render();
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    state.scanStream = stream;
+    const video = document.createElement('video');
+    video.autoplay = true; video.playsInline = true; video.id = 'camView'; video.srcObject = stream;
+    const area = document.getElementById('scanArea');
+    if (area) { area.innerHTML = ''; area.appendChild(video); }
+    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+    const tick = async () => {
+      if (!state.scanning) return;
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = window.jsQR && jsQR(imageData.data, imageData.width, imageData.height);
+        if (code) {
+          try {
+            const res = await apiCall('mark_attendance_by_qr', { qr_value: code.data, session_date: state.attendanceDate });
+            if (res.student_id) setAttendanceMark(res.student_id, state.attendanceDate, 'present');
+            state.scanMsg = t('markedPresent', { name: res.student_name });
+          }
+          catch (e) { state.scanMsg = e.message; }
+          render(); return;
+        }
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  } catch { state.error = t('scanCameraError'); state.scanning = false; render(); }
+}
+
+// ---- Statistics ----
+function renderStatistics() {
+  const el = document.createElement('div');
+  const stats = state.statistics;
+  if (!stats) {
+    el.innerHTML = `<p class="note">${t('statsNoData')}</p>`;
+    return el;
+  }
+  const levelRows = Object.entries(stats.by_level).filter(([,n]) => n > 0);
+  const maxLevel = Math.max(1, ...levelRows.map(([,n]) => n));
+  const pb = stats.payment_breakdown || { paid: 0, pay_later: 0, overdue: 0 };
+  const pbTotal = Math.max(1, pb.paid + pb.pay_later + pb.overdue);
+
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('statsTitle')}</h2></div>
+    <div class="card">
+      <h3 style="margin-top:0;">${t('statsByLevel')}</h3>
+      ${levelRows.length ? levelRows.map(([lvl, n]) => `
+        <div class="bar-row"><div class="bar-label">${lvl}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(n/maxLevel*100).toFixed(0)}%"></div></div>
+          <div class="bar-val">${n}</div></div>
+      `).join('') : `<p class="note">${t('statsNoData')}</p>`}
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">${t('statsPaymentBreakdown')}</h3>
+      <div class="bar-row"><div class="bar-label">${t('badgePaid')}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(pb.paid/pbTotal*100).toFixed(0)}%"></div></div>
+        <div class="bar-val">${pb.paid}</div></div>
+      <div class="bar-row"><div class="bar-label">${t('badgePayLater')}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(pb.pay_later/pbTotal*100).toFixed(0)}%"></div></div>
+        <div class="bar-val">${pb.pay_later}</div></div>
+      <div class="bar-row"><div class="bar-label">${t('badgeOverdue')}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(pb.overdue/pbTotal*100).toFixed(0)}%"></div></div>
+        <div class="bar-val">${pb.overdue}</div></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">${t('statsByGroup')}</h3>
+      <table>
+        <thead><tr><th>${t('colGroup')}</th><th>${t('colStudentCount')}</th><th>${t('colAttendanceRate')}</th><th>${t('colRevenue')}</th></tr></thead>
+        <tbody>
+          ${stats.groups.length ? stats.groups.map(g => `
+            <tr><td>${g.name} (${g.level})</td><td>${g.student_count}</td>
+              <td>${g.attendance_rate === null ? '—' : g.attendance_rate + '%'}</td>
+              <td>${Number(g.revenue).toLocaleString()} DA</td></tr>
+          `).join('') : `<tr><td colspan="4" class="note">${t('statsNoData')}</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+  return el;
+}
+
+// ---- Settings (school branding) ----
+function renderSettings() {
+  const el = document.createElement('div');
+  el.innerHTML = `
+    <div class="toolbar"><h2>${t('settingsTitle')}</h2></div>
+    <div class="card">
+      <label for="schoolNameInput">${t('schoolNameLabel')}</label>
+      <input id="schoolNameInput" value="${state.schoolName || ''}">
+      <p class="note" style="margin-top:.2rem;">${t('schoolNameHint')}</p>
+      <label>${t('logoLabel')}</label>
+      <div class="row">
+        ${state.logoUrl ? `<img src="${state.logoUrl}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;">` : ''}
+        <input type="file" id="logoInput" accept="image/*">
+      </div>
+      <p class="note">${t('logoHint')}</p>
+      <div class="row" style="margin-top:1rem;"><button class="btn-primary" id="saveBrandingBtn">${t('saveBrandingBtn')}</button></div>
+    </div>
+    ${!state.demoMode ? `
+    <div class="card">
+      <h3 style="margin-top:0;">${t('changePasswordTitle')}</h3>
+      ${state.changePwMsg ? `<div class="note" style="color:var(--good);">${state.changePwMsg}</div>` : ''}
+      <label for="currentPwInput">${t('currentPasswordLabel')}</label>
+      <input type="password" id="currentPwInput" value="${state.changePwCurrent}">
+      <label for="newPwInput">${t('newPasswordLabel')}</label>
+      <input type="password" id="newPwInput" value="${state.changePwNew}" placeholder="${t('passwordHintSignup')}">
+      <div class="row" style="margin-top:1rem;"><button class="btn-primary" id="changePwBtn">${t('changePasswordBtn')}</button></div>
+    </div>` : ''}
+  `;
+  let pendingLogoBase64 = null;
+  el.querySelector('#logoInput').onchange = (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { pendingLogoBase64 = reader.result; };
+    reader.readAsDataURL(file);
+  };
+  el.querySelector('#saveBrandingBtn').onclick = async () => {
+    const school_name = el.querySelector('#schoolNameInput').value.trim();
+    try {
+      if (state.demoMode) {
+        state.schoolName = school_name;
+        if (pendingLogoBase64) state.logoUrl = pendingLogoBase64;
+      } else {
+        const data = await apiCall('update_school_settings', { school_name, logo_base64: pendingLogoBase64 });
+        state.schoolName = data.school_name || '';
+        state.logoUrl = data.logo_url || '';
+      }
+      state.error = '';
+      render();
+    } catch (e) { state.error = e.message; render(); }
+  };
+  const changePwBtn = el.querySelector('#changePwBtn');
+  if (changePwBtn) {
+    el.querySelector('#currentPwInput').oninput = (e) => state.changePwCurrent = e.target.value;
+    el.querySelector('#newPwInput').oninput = (e) => state.changePwNew = e.target.value;
+    changePwBtn.onclick = async () => {
+      state.error = ''; state.changePwMsg = '';
+      try {
+        await apiCall('change_password', { current_password: state.changePwCurrent, new_password: state.changePwNew });
+        state.changePwCurrent = ''; state.changePwNew = ''; state.changePwMsg = t('changePasswordSuccess');
+        render();
+      } catch (e) { state.error = e.message; render(); }
+    };
+  }
+  return el;
+}
+
+render();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+initIosInstallBanner();
+</script>
+</body>
+</html>
